@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\HomeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,4 +17,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+
+// 60 = number of requests allowed
+// 1 = number of minutes
+
+Route::middleware('throttle:5,1')->group(function () {
+
+    Route::get('notices', [HomeController::class, 'notices']);
+
 });
