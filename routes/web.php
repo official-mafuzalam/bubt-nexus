@@ -42,6 +42,8 @@ Route::middleware(['auth', 'role:super_admin|admin|user'])->group(function () {
 
         Route::get('/', [HomeController::class, 'index'])->name('admin.index');
 
+        // Api
+        Route::get('/api-documentation', [HomeController::class, 'apiDocumentation'])->name('admin.api.documentation');
 
         // Profile
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

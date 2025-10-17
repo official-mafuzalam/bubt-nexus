@@ -24,6 +24,19 @@
                     Dashboard
                 </a>
             </li>
+            <li>
+                <a class="flex items-center gap-x-3.5 py-2 px-2.5 text-sm text-slate-700 rounded-md hover:bg-gray-100 dark:bg-gray-900 dark:text-white
+                {{ in_array(Route::currentRouteName(), ['admin.api.documentation']) ? 'bg-gray-200 dark:bg-gray-900' : 'text-slate-700' }}"
+                    href="{{ route('admin.api.documentation') }}">
+                    <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                        fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M4.5 1A1.5 1.5 0 0 0 3 2.5v11A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-11A1.5 1.5 0 0 0 11.5 1h-7zm0 1h7A.5.5 0 0 1 12 2.5v11a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5v-11A.5.5 0 0 1 4.5 2z" />
+                        <path d="M8 4a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 8 4zM8 .75a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0V1.5A.75.75 0 0 1 8 .75zM6.364 6.05a.75.75 0 0 1 .976-.217l1.5.75a.75.75 0 1 1-.707 1.316l-1.5-.75a.75.75 0 0 1-.217-.976zM11.636 6.05a.75.75 0 0 1 .217.976l-1.5.75a.75.75 0 1 1-.707-1.316l1.5-.75a.75.75 0 0 1 .976.217zM8 10.75a. 75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5a.75.75 0 0 1 .75-.75z" />
+                    </svg>
+                    API Documentation
+                </a>
+            </li>
+
             <li class="hs-accordion {{ in_array(Route::currentRouteName(), ['admin.role', 'admin.role.createPage', 'admin.role.edit', 'admin.permission', 'admin.permission.createPage', 'admin.permission.edit', 'admin.user', 'admin.user.createPage', 'admin.users.show']) ? 'hs-accordion-active' : '' }}"
                 id="account-accordion">
                 <a class="hs-accordion-toggle flex items-center gap-x-3.5 py-2 px-2.5 hs-accordion-active:text-blue-600 hs-accordion-active:hover:bg-transparent text-sm text-slate-700 rounded-md hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-900 dark:text-slate-400 dark:hover:text-slate-300 dark:hs-accordion-active:text-white"
