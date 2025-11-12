@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use spatie\Permission\Models\Permission;
 
 class AdminSeeder extends Seeder
 {
@@ -26,5 +25,4 @@ class AdminSeeder extends Seeder
         // Assign roles
         $user->assignRole('super_admin', 'admin', 'user');
     }
-
 }

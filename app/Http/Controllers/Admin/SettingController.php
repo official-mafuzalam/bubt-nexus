@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Setting;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+
+class SettingController extends Controller
+{
+    public function index()
+    {
+        $groups = Setting::getGroupedSettings();
+
+        return Inertia::render('admin/Settings/Index', [
+            'groups' => $groups,
+        ]);
+    }
+
+    public function update(Request $request)
+    {
+        $settings = $request->except('_token');
+
+        // Get all boolean settings from database
+        $booleanSettings = Setting::where('type', 'boolean')->pluck('key');
+
+        foreach ($settings as $key => $value) {
+            $setting = Setting::where('key', $key)->first();
+
+            if ($setting) {
+                // Handle file uploads
+                if ($setting->type === 'image' && $request->hasFile($key)) {
+                    // Delete old file if exists
+                    if ($setting->value && Storage::disk('public')->exists($setting->value)) {
+                        Storage::disk('public')->delete($setting->value);
+                    }
+
+                    // Store new file
+                    $path = $request->file($key)->store('settings', 'public');
+                    $value = $path;
+                }
+
+                // Handle empty file input (don't overwrite existing file)
+                if ($setting->type === 'image' && !$request->hasFile($key) && empty($value)) {
+                    continue; // Skip updating if no new file was uploaded
+                }
+
+                $setting->update(['value' => $value]);
+
+                // Clear individual setting cache
+                Cache::forget('setting_' . $key);
+            }
+        }
+
+        // Handle boolean settings that weren't submitted (unchecked checkboxes)
+        foreach ($booleanSettings as $booleanKey) {
+            if (!$request->has($booleanKey)) {
+                $setting = Setting::where('key', $booleanKey)->first();
+                if ($setting) {
+                    $setting->update(['value' => '0']);
+                    Cache::forget('setting_' . $booleanKey);
+                }
+            }
+        }
+
+        // Clear all settings cache
+        Cache::flush();
+        // Clear settings cache
+        Cache::forget('app_settings');
+
+
+        return redirect()->route('admin.settings.index')
+            ->with('success', 'Settings updated successfully.');
+    }
+}
