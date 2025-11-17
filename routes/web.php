@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ApiController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\NotesController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingController;
@@ -21,6 +22,10 @@ Route::get('/', [PublicHomeController::class, 'index'])->name('home');
 Route::middleware(['auth', 'verified', 'role:super_admin|admin|user'])->prefix('admin-dashboard')->group(function () {
 
     Route::get('/', [HomeController::class, 'index'])->name('dashboard');
+
+    Route::get('/notes', [NotesController::class, 'index'])->name('admin.notes.index');
+    Route::post('/notes', [NotesController::class, 'store'])->name('admin.notes.store');
+    Route::delete('/notes/{note}', [NotesController::class, 'destroy'])->name('admin.notes.destroy');
 
     Route::get('/api-documentation', [ApiController::class, 'index'])->name('admin.api.index');
 

@@ -14,6 +14,7 @@ import {
 import { dashboard } from '@/routes';
 import { index as settingsIndex } from '@/routes/admin/settings';
 import { index as apiIndex } from '@/routes/admin/api';
+import { index as notesIndex } from '@/routes/admin/notes';
 import permissions from '@/routes/admin/permissions';
 import roles from '@/routes/admin/roles';
 import users from '@/routes/admin/users';
@@ -66,6 +67,11 @@ const mainNavItems: NavItem[] = [
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Notes',
+        href: notesIndex(),
+        icon: Users,
     },
     {
         title: 'API Documentation',
