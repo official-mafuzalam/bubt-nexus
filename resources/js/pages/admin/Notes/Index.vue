@@ -136,7 +136,7 @@ function confirmDelete(id: number) {
   </AdminLayout>
 </template>
 
-<script lang="ts">
+<!-- <script lang="ts">
 /* Pagination component - simple small helper */
 import { defineComponent } from 'vue';
 export default defineComponent({
@@ -151,4 +151,4 @@ export default defineComponent({
     </div>
   `
 });
-</script>
+</script> -->
