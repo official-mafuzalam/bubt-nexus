@@ -103,8 +103,44 @@ class RoutineController extends Controller
             // Define day names in table order (SAT, SUN, MON, TUE, WED, THR, FRI)
             $tableDayNames = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THR', 'FRI'];
 
+            // Function to parse course information
+            $parseCourseInfo = function ($classInfo) {
+                if (empty($classInfo)) {
+                    return null;
+                }
+
+                // Pattern to match: COURSE_CODE FC: FACULTY_CODE R: ROOM
+                // Example: "HUM 1102FC: SHAM R: 41101" or "ENG 1101FC: SMAA R: 4701"
+                $pattern = '/^([A-Z]+\s+\d+[A-Z]*)FC:\s*([A-Z]+)\s+R:\s*(\d+)$/';
+
+                if (preg_match($pattern, $classInfo, $matches)) {
+                    return [
+                        'course_code' => $matches[1],
+                        'faculty_code' => $matches[2],
+                        'room' => $matches[3]
+                    ];
+                }
+
+                // Alternative pattern for different formatting
+                $altPattern = '/^([A-Z]+\s+\d+[A-Z]*)\s+FC:\s*([A-Z]+)\s+R:\s*(\d+)$/';
+                if (preg_match($altPattern, $classInfo, $matches)) {
+                    return [
+                        'course_code' => $matches[1],
+                        'faculty_code' => $matches[2],
+                        'room' => $matches[3]
+                    ];
+                }
+
+                // If no pattern matches, return the original string
+                return [
+                    'course_code' => $classInfo,
+                    'faculty_code' => '',
+                    'room' => ''
+                ];
+            };
+
             // Loop rows
-            $rows->each(function ($rowNode, $rowIndex) use (&$jsonData, $headerCells, $tableDayNames) {
+            $rows->each(function ($rowNode, $rowIndex) use (&$jsonData, $headerCells, $tableDayNames, $parseCourseInfo) {
                 if ($rowIndex === 0)
                     return; // skip header row
 
@@ -118,10 +154,6 @@ class RoutineController extends Controller
                 $dayIndex = $rowIndex - 1;
                 $day = $tableDayNames[$dayIndex] ?? "DAY_$dayIndex";
 
-                $dayData = [
-                    'day' => $day,
-                ];
-
                 $hasClasses = false;
                 $timeSlots = [];
 
@@ -130,15 +162,25 @@ class RoutineController extends Controller
 
                     // Only include time slots that have classes (non-empty)
                     if (!empty($classInfo)) {
-                        $timeSlots[$timeSlot] = $classInfo;
-                        $hasClasses = true;
+                        $parsedInfo = $parseCourseInfo($classInfo);
+                        if ($parsedInfo) {
+                            $timeSlots[] = [
+                                'time' => $timeSlot,
+                                'course_code' => $parsedInfo['course_code'],
+                                'faculty_code' => $parsedInfo['faculty_code'],
+                                'room' => $parsedInfo['room']
+                            ];
+                            $hasClasses = true;
+                        }
                     }
                 }
 
                 // Only include days that have at least one class
                 if ($hasClasses) {
-                    $dayData = array_merge(['day' => $day], $timeSlots);
-                    $jsonData[] = $dayData;
+                    $jsonData[] = [
+                        'day' => $day,
+                        'classes' => $timeSlots
+                    ];
                 }
             });
 
