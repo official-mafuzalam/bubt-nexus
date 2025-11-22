@@ -135,20 +135,3 @@ function confirmDelete(id: number) {
     </div>
   </AdminLayout>
 </template>
-
-<!-- <script lang="ts">
-/* Pagination component - simple small helper */
-import { defineComponent } from 'vue';
-export default defineComponent({
-  name: 'Pagination',
-  props: {
-    links: { type: Array as () => any[], required: true }
-  },
-  template: `
-    <div class="flex gap-2">
-      <a v-for="link in links" :key="link.label" v-if="link.url"
-         :href="link.url" v-html="link.label" class="px-3 py-1 rounded border"></a>
-    </div>
-  `
-});
-</script> -->

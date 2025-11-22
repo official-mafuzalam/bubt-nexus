@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\HomeController;
+use App\Http\Controllers\Api\RoutineController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -19,5 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware('throttle:5,1')->group(function () {
 
     Route::get('notices', [HomeController::class, 'notices']);
+
+    Route::get('/routine', [RoutineController::class, 'getRoutine']);
 
 });

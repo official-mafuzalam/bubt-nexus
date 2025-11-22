@@ -3,7 +3,6 @@ import AdminLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
 </script>
 
-
 <template>
     <Head title="API Documentation" />
 
@@ -259,6 +258,78 @@ Accept: application/json</code></pre>
     "updated_at": "2023-01-02T00:00:00.000000Z"
   }
 ]</code></pre>
+                                </div>
+                            </div>
+                            <div class="mb-6">
+                                <div class="mb-2 flex items-center">
+                                    <span
+                                        class="mr-2 rounded bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-300"
+                                        >GET</span
+                                    >
+                                    <code class="font-mono text-lg"
+                                        >/api/routine</code
+                                    >
+                                </div>
+                                <p
+                                    class="mb-3 text-gray-700 dark:text-gray-300"
+                                >
+                                    Retrieve class routine for a specific
+                                    program, semester, and intake. This endpoint
+                                    scrapes the official BUBT routine page and
+                                    returns structured data.
+                                </p>
+
+                                <div class="mb-4">
+                                    <h4 class="mb-2 font-medium">
+                                        Query Parameters:
+                                    </h4>
+                                    <ul
+                                        class="list-inside list-disc text-sm text-gray-600 dark:text-gray-400"
+                                    >
+                                        <li>
+                                            <code>program</code> (required) -
+                                            The program code (e.g., "016" for
+                                            BBA)
+                                        </li>
+                                        <li>
+                                            <code>semester</code> (required) -
+                                            The semester number
+                                        </li>
+                                        <li>
+                                            <code>intake</code> (required) - The
+                                            intake number (e.g., "50 - 1")
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div
+                                    class="rounded-md bg-gray-100 p-4 dark:bg-gray-900"
+                                >
+                                    <h4 class="mb-2 font-medium">
+                                        Example Response:
+                                    </h4>
+                                    <pre class="text-sm">
+                                    <code class="language-json">{
+  "status": true,
+  "program": "BBA",
+  "intake": "50 - 1",
+  "semester": "Fall, 2025",
+  "routine": [
+    {
+      "day": "MON",
+      "07:00 PM to 08:10 PM": "ELT 5105FC: KSI R: 1409",
+      "08:10 PM to 09:20 PM": "ELT 5105FC: KSI R: 1409"
+    },
+    {
+      "day": "TUE",
+      "04:40 PM to 05:50 PM": "ELT 5102FC: FEM R: 1409",
+      "05:50 PM to 07:00 PM": "ELT 5102FC: FEM R: 1409",
+      "07:00 PM to 08:10 PM": "ELT 5103FC: KAS R: 1409",
+      "08:10 PM to 09:20 PM": "ELT 5103FC: KAS R: 1409"
+    }
+  ]
+}</code>
+</pre>
                                 </div>
                             </div>
                         </div>
