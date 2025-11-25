@@ -30,147 +30,154 @@ class RoutineController extends Controller
 
             $crawler = new Crawler($html);
 
-            $foundIntake = false;
-            $routineTable = null;
+            // Step 1: Find all tables and identify which one belongs to our intake
+            $tables = $crawler->filter('table');
+            $targetTable = null;
             $programName = '';
             $semesterInfo = '';
-            $currentIntake = '';
 
-            // Step 1: Extract program name, semester info, and find the intake table
-            $crawler->filter('*')->each(function ($node) use ($intakeName, &$foundIntake, &$routineTable, &$programName, &$semesterInfo, &$currentIntake) {
-                $text = trim($node->text());
+            // Look through all tables to find the one for our intake
+            foreach ($tables as $table) {
+                $tableCrawler = new Crawler($table);
 
-                // Check if this node contains intake information
-                if (str_contains($text, 'Intake:')) {
-                    $currentIntake = trim(str_replace('Intake:', '', $text));
+                // Get all text content around this table
+                $surroundingText = $this->getSurroundingText($tableCrawler);
 
-                    // If this is our target intake, set flags and extract info
-                    if (trim($currentIntake) === $intakeName) {
-                        $foundIntake = true;
+                // Check if this table has our intake
+                if (str_contains($surroundingText, "Intake: {$intakeName}")) {
+                    $targetTable = $tableCrawler;
 
-                        // Extract program name from previous nodes
-                        $prevNode = $node->previousAll()->first();
-                        while ($prevNode->count() > 0) {
-                            $prevText = trim($prevNode->text());
-                            if (str_contains($prevText, 'Program:')) {
-                                $programName = trim(str_replace('Program:', '', $prevText));
-                                break;
-                            }
-                            $prevNode = $prevNode->previousAll()->first();
-                        }
-
-                        // Extract semester info from next nodes
-                        $nextNode = $node->nextAll()->first();
-                        while ($nextNode->count() > 0) {
-                            $nextText = trim($nextNode->text());
-                            if (str_contains($nextText, 'Semester:')) {
-                                $semesterInfo = trim(str_replace('Semester:', '', $nextText));
-                                break;
-                            }
-                            $nextNode = $nextNode->nextAll()->first();
-                        }
+                    // Extract program and semester info from surrounding text
+                    if (preg_match('/Program:\s*([^\n]+)/', $surroundingText, $programMatch)) {
+                        $programName = trim($programMatch[1]);
                     }
-                }
-
-                // Look for routine table after finding our intake
-                if ($foundIntake && $node->nodeName() === 'table') {
-                    $headerText = trim($node->filter('tr')->first()->text());
-
-                    if (str_contains($headerText, 'Day/Time')) {
-                        $routineTable = $node;
-                        $foundIntake = false; // Stop after finding the table
+                    if (preg_match('/Semester:\s*([^\n]+)/', $surroundingText, $semesterMatch)) {
+                        $semesterInfo = trim($semesterMatch[1]);
                     }
+                    break;
                 }
-            });
+            }
 
-            if (!$routineTable) {
+            if (!$targetTable) {
                 return response()->json([
                     'error' => 'Routine table not found for this intake on BUBT Website.'
                 ], 404);
             }
 
             // Step 2: Convert HTML table → JSON
-            $rows = $routineTable->filter('tr');
+            $rows = $targetTable->filter('tr');
             $jsonData = [];
 
-            $headerCells = $rows->first()->filter('td,th')->each(function ($th) {
+            // Extract time slots from header
+            $headerCells = $rows->first()->filter('td, th')->each(function ($th) {
                 return trim($th->text());
             });
 
             // Remove "Day/Time" first column header
             array_shift($headerCells);
 
-            // Define day names in table order (SAT, SUN, MON, TUE, WED, THR, FRI)
-            $tableDayNames = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THR', 'FRI'];
+            // Define day names that might appear in the table
+            $possibleDayNames = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THR', 'FRI'];
 
-            // Function to parse course information
-            $parseCourseInfo = function ($classInfo) {
-                if (empty($classInfo)) {
-                    return null;
+            // Function to parse course information from table cell
+            $parseCourseInfo = function ($cellText) {
+                if (empty(trim($cellText))) {
+                    return [];
                 }
 
-                // Pattern to match: COURSE_CODE FC: FACULTY_CODE R: ROOM
-                // Example: "HUM 1102FC: SHAM R: 41101" or "ENG 1101FC: SMAA R: 4701"
-                $pattern = '/^([A-Z]+\s+\d+[A-Z]*)FC:\s*([A-Z]+)\s+R:\s*(\d+)$/';
+                $courses = [];
+                // Split multiple courses in one cell by new lines first
+                $courseBlocks = preg_split('/\n+/', trim($cellText));
 
-                if (preg_match($pattern, $classInfo, $matches)) {
-                    return [
-                        'course_code' => $matches[1],
-                        'faculty_code' => $matches[2],
-                        'room' => $matches[3]
+                foreach ($courseBlocks as $block) {
+                    $block = trim($block);
+                    if (empty($block))
+                        continue;
+
+                    $courseCode = '';
+                    $facultyCode = '';
+                    $room = '';
+
+                    // Try different patterns to extract course info
+                    $patterns = [
+                        // Pattern for: "CSE 319 FC: AHS R: 2320"
+                        '/^([A-Z]{2,}\s*\d+[A-Z]*)\s+FC:\s*([A-Za-z]+)\s+R:\s*(\d+)$/',
+                        // Pattern for: "CSE 319\nFC: AHS\nR: 2320" (already split by new lines)
+                        '/^([A-Z]{2,}\s*\d+[A-Z]*)$/'
                     ];
+
+                    $isCourseCodeLine = preg_match($patterns[1], $block, $matches) || preg_match($patterns[0], $block, $matches);
+
+                    if ($isCourseCodeLine && !empty($matches[1])) {
+                        $courseCode = $matches[1];
+                        $facultyCode = $matches[2] ?? '';
+                        $room = $matches[3] ?? '';
+                    } else {
+                        // Check if this is a faculty code line
+                        if (str_starts_with($block, 'FC:')) {
+                            $facultyCode = trim(substr($block, 3));
+                        }
+                        // Check if this is a room line
+                        elseif (str_starts_with($block, 'R:')) {
+                            $room = trim(substr($block, 2));
+                        }
+                        // Otherwise, assume it's a course code
+                        else {
+                            $courseCode = $block;
+                        }
+                    }
+
+                    if (!empty($courseCode)) {
+                        $courses[] = [
+                            'course_code' => $courseCode,
+                            'faculty_code' => $facultyCode,
+                            'room' => $room,
+                        ];
+                    }
                 }
 
-                // Alternative pattern for different formatting
-                $altPattern = '/^([A-Z]+\s+\d+[A-Z]*)\s+FC:\s*([A-Z]+)\s+R:\s*(\d+)$/';
-                if (preg_match($altPattern, $classInfo, $matches)) {
-                    return [
-                        'course_code' => $matches[1],
-                        'faculty_code' => $matches[2],
-                        'room' => $matches[3]
-                    ];
-                }
-
-                // If no pattern matches, return the original string
-                return [
-                    'course_code' => $classInfo,
-                    'faculty_code' => '',
-                    'room' => ''
-                ];
+                return $courses;
             };
 
-            // Loop rows
-            $rows->each(function ($rowNode, $rowIndex) use (&$jsonData, $headerCells, $tableDayNames, $parseCourseInfo) {
-                if ($rowIndex === 0)
-                    return; // skip header row
+            // Process each row (skip header row)
+            for ($rowIndex = 1; $rowIndex < $rows->count(); $rowIndex++) {
+                $rowNode = $rows->eq($rowIndex);
+                $cells = $rowNode->filter('td');
 
-                $cells = $rowNode->filter('td')->each(function ($td) {
-                    return trim(preg_replace('/\s+/', ' ', $td->text()));
-                });
+                if ($cells->count() === 0)
+                    continue;
 
-                if (count($cells) === 0)
-                    return;
+                // Get day from first cell
+                $day = trim($cells->first()->text());
 
-                $dayIndex = $rowIndex - 1;
-                $day = $tableDayNames[$dayIndex] ?? "DAY_$dayIndex";
+                // Skip if this doesn't look like a day row
+                if (!in_array($day, $possibleDayNames)) {
+                    continue;
+                }
 
                 $hasClasses = false;
                 $timeSlots = [];
 
-                foreach ($headerCells as $i => $timeSlot) {
-                    $classInfo = $cells[$i] ?? "";
+                // Process each time slot (skip first cell which is the day)
+                for ($i = 1; $i < $cells->count() && ($i - 1) < count($headerCells); $i++) {
+                    $cellNode = $cells->eq($i);
+                    $timeSlot = $headerCells[$i - 1] ?? "";
 
-                    // Only include time slots that have classes (non-empty)
-                    if (!empty($classInfo)) {
-                        $parsedInfo = $parseCourseInfo($classInfo);
-                        if ($parsedInfo) {
-                            $timeSlots[] = [
-                                'time' => $timeSlot,
-                                'course_code' => $parsedInfo['course_code'],
-                                'faculty_code' => $parsedInfo['faculty_code'],
-                                'room' => $parsedInfo['room']
-                            ];
-                            $hasClasses = true;
+                    $cellText = $cellNode->text();
+
+                    if (!empty(trim($cellText))) {
+                        $parsedCourses = $parseCourseInfo($cellText);
+
+                        foreach ($parsedCourses as $courseInfo) {
+                            if (!empty($courseInfo['course_code'])) {
+                                $timeSlots[] = [
+                                    'time' => $timeSlot,
+                                    'course_code' => $courseInfo['course_code'],
+                                    'faculty_code' => $courseInfo['faculty_code'],
+                                    'room' => $courseInfo['room']
+                                ];
+                                $hasClasses = true;
+                            }
                         }
                     }
                 }
@@ -182,7 +189,7 @@ class RoutineController extends Controller
                         'classes' => $timeSlots
                     ];
                 }
-            });
+            }
 
             return response()->json([
                 'status' => true,
@@ -198,5 +205,32 @@ class RoutineController extends Controller
                 'details' => $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Helper function to get text content surrounding a table
+     */
+    private function getSurroundingText(Crawler $tableCrawler)
+    {
+        $text = '';
+
+        // Get previous siblings (text before the table)
+        $prevNode = $tableCrawler->getNode(0)->previousSibling;
+        while ($prevNode) {
+            if ($prevNode->nodeType === XML_TEXT_NODE) {
+                $text = trim($prevNode->textContent) . ' ' . $text;
+            } elseif ($prevNode->nodeType === XML_ELEMENT_NODE) {
+                $elementText = trim((new Crawler($prevNode))->text());
+                if (!empty($elementText)) {
+                    $text = $elementText . ' ' . $text;
+                }
+            }
+            $prevNode = $prevNode->previousSibling;
+        }
+
+        // Get the table's own text (headers, etc.)
+        $text .= ' ' . $tableCrawler->text();
+
+        return $text;
     }
 }

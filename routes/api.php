@@ -23,13 +23,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [UserController::class, 'me']);
 });
 
+
+
+Route::get('notices', [HomeController::class, 'notices']);
+Route::get('/routine', [RoutineController::class, 'getRoutine']);
+
 // 60 = number of requests allowed
 // 1 = number of minutes
-
-Route::middleware('throttle:5,1')->group(function () {
-
-    Route::get('notices', [HomeController::class, 'notices']);
-
-    Route::get('/routine', [RoutineController::class, 'getRoutine']);
-
-});
+// Route::middleware('throttle:5,1')->group(function () {
+// });
