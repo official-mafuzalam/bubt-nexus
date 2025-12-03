@@ -196,4 +196,38 @@ class User extends Authenticatable
         $this->status = 'active';
         $this->save();
     }
+
+    /*
+     * Ride Sharing Relationships and Scopes
+     */
+    public function ridesAsDriver()
+    {
+        return $this->hasMany(Ride::class, 'driver_id');
+    }
+
+    public function rideRequests()
+    {
+        return $this->hasMany(RideRequest::class, 'passenger_id');
+    }
+
+    public function devices()
+    {
+        return $this->hasMany(UserDevice::class);
+    }
+
+    public function locations()
+    {
+        return $this->hasMany(RideLocation::class);
+    }
+
+    public function scopeAvailableDrivers($query, $excludeUserId = null)
+    {
+        $query = $query->where('status', 'active');
+
+        if ($excludeUserId) {
+            $query = $query->where('id', '!=', $excludeUserId);
+        }
+
+        return $query;
+    }
 }

@@ -1,0 +1,167 @@
+{
+    "create_response": {
+        "status": "success",
+        "message": "Ride created successfully",
+        "data": {
+            "driver_id": 1,
+            "from_location": "BUBT, Dhaka",
+            "to_location": "Farmgate, Dhaka",
+            "from_lat": "23.81033100",
+            "from_lng": "90.41252100",
+            "to_lat": "23.75586100",
+            "to_lng": "90.38998200",
+            "available_seats": 4,
+            "total_seats": 4,
+            "fare_per_seat": "50.00",
+            "departure_time": "2025-12-25T14:30:00.000000Z",
+            "notes": "Going via Mirpur road",
+            "vehicle_type": "Car",
+            "vehicle_number": "DHA-12345",
+            "status": "active",
+            "updated_at": "2025-12-03T06:47:21.000000Z",
+            "created_at": "2025-12-03T06:47:21.000000Z",
+            "id": 1,
+            "driver": {
+                "id": 1,
+                "name": "Admin",
+                "email": "admin@gmail.com",
+                "email_verified_at": "2025-12-03T05:00:42.000000Z",
+                "two_factor_confirmed_at": null,
+                "status": "active",
+                "last_seen_at": null,
+                "created_at": "2025-12-03T05:00:42.000000Z",
+                "updated_at": "2025-12-03T05:00:42.000000Z",
+                "user_type": "Unknown",
+                "is_student": false,
+                "is_faculty": false,
+                "user_detail": null
+            }
+        }
+    },
+    "nearby_rides_response": {
+        "status": "success",
+        "data": [
+            {
+                "id": 1,
+                "driver_id": 1,
+                "from_location": "BUBT, Dhaka",
+                "to_location": "Farmgate, Dhaka",
+                "from_lat": "23.81033100",
+                "from_lng": "90.41252100",
+                "to_lat": "23.75586100",
+                "to_lng": "90.38998200",
+                "available_seats": 2,
+                "total_seats": 4,
+                "fare_per_seat": "50.00",
+                "status": "active",
+                "departure_time": "2025-12-25T14:30:00.000000Z",
+                "notes": "Going via Mirpur road",
+                "distance": 0,
+                "driver": {
+                    "id": 1,
+                    "name": "Admin",
+                    "email": "admin@gmail.com",
+                    "email_verified_at": "2025-12-03T06:57:52.000000Z",
+                    "two_factor_confirmed_at": null,
+                    "status": "active",
+                    "last_seen_at": null,
+                    "created_at": "2025-12-03T06:57:53.000000Z",
+                    "updated_at": "2025-12-03T06:57:53.000000Z",
+                    "user_type": "Unknown",
+                    "is_student": false,
+                    "is_faculty": false,
+                    "user_detail": null
+                },
+                "confirmed_passengers": []
+            }
+        ]
+    },
+    "ride_details_response": {
+        {
+            "status": "success",
+            "data": {
+                "id": 1,
+                "driver_id": 1,
+                "from_location": "BUBT, Dhaka",
+                "to_location": "Farmgate, Dhaka",
+                "from_lat": "23.81033100",
+                "from_lng": "90.41252100",
+                "to_lat": "23.75586100",
+                "to_lng": "90.38998200",
+                "available_seats": 2,
+                "total_seats": 4,
+                "fare_per_seat": "50.00",
+                "status": "active",
+                "departure_time": "2025-12-25T14:30:00.000000Z",
+                "notes": "Going via Mirpur road",
+                "vehicle_type": "Car",
+                "vehicle_number": "DHA-12345",
+                "created_at": "2025-12-03T07:16:47.000000Z",
+                "updated_at": "2025-12-03T07:17:44.000000Z",
+                "driver": {
+                    "id": 1,
+                    "name": "Admin",
+                    "email": "admin@gmail.com",
+                    "email_verified_at": "2025-12-03T06:57:52.000000Z",
+                    "two_factor_confirmed_at": null,
+                    "status": "active",
+                    "last_seen_at": null,
+                    "created_at": "2025-12-03T06:57:53.000000Z",
+                    "updated_at": "2025-12-03T06:57:53.000000Z",
+                    "user_type": "Unknown",
+                    "is_student": false,
+                    "is_faculty": false,
+                    "user_detail": null
+                },
+                "confirmed_passengers": [],
+                "requests": [
+                    {
+                        "id": 1,
+                        "ride_id": 1,
+                        "passenger_id": 2,
+                        "requested_seats": 2,
+                        "status": "pending",
+                        "message": "Can I join your ride? I'm going the same way.",
+                        "created_at": "2025-12-03T07:17:24.000000Z",
+                        "updated_at": "2025-12-03T07:17:24.000000Z",
+                        "passenger": {
+                            "id": 2,
+                            "name": "Test User",
+                            "email": "test@gmail.com",
+                            "email_verified_at": null,
+                            "two_factor_confirmed_at": null,
+                            "status": "active",
+                            "last_seen_at": null,
+                            "created_at": "2025-12-03T07:12:57.000000Z",
+                            "updated_at": "2025-12-03T07:12:57.000000Z",
+                            "user_type": "Unknown",
+                            "is_student": false,
+                            "is_faculty": false,
+                            "user_detail": {
+                                "id": 1,
+                                "user_id": 2,
+                                "semester": null,
+                                "intake": null,
+                                "program": null,
+                                "student_id": null,
+                                "cgpa": null,
+                                "department": null,
+                                "faculty_id": null,
+                                "designation": null,
+                                "office_room": null,
+                                "office_hours": null,
+                                "phone": null,
+                                "address": null,
+                                "date_of_birth": null,
+                                "emergency_contact": null,
+                                "profile_picture": null,
+                                "created_at": "2025-12-03T07:12:57.000000Z",
+                                "updated_at": "2025-12-03T07:12:57.000000Z"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -9,6 +9,11 @@ import { initializeTheme } from './composables/useAppearance';
 // ✅ Import toast library
 import Toast from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
+import { configureEcho } from '@laravel/echo-vue';
+
+configureEcho({
+    broadcaster: 'reverb',
+});
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

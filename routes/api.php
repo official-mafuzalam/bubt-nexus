@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\HomeController;
+use App\Http\Controllers\Api\RideController;
 use App\Http\Controllers\Api\RoutineController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -12,6 +14,31 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Ride routes
+    Route::prefix('rides')->group(function () {
+        Route::post('/create', [RideController::class, 'create']);
+        Route::get('/nearby', [RideController::class, 'getNearbyRides']);
+        Route::get('/my-rides', [RideController::class, 'myRides']);
+        Route::get('/{id}', [RideController::class, 'show']);
+        Route::post('/{id}/request', [RideController::class, 'requestRide']);
+        Route::put('/{rideId}/request/{requestId}', [RideController::class, 'handleRequest']);
+        Route::put('/{id}/status', [RideController::class, 'updateStatus']);
+        Route::post('/{id}/location', [RideController::class, 'updateLocation']);
+        Route::get('/{id}/locations', [RideController::class, 'getLocations']);
+        Route::post('/{id}/message', [RideController::class, 'sendMessage']);
+        Route::get('/{id}/messages', [RideController::class, 'getMessages']);
+    });
+
+    // Device routes for push notifications
+    Route::prefix('device')->group(function () {
+        Route::post('/register', [DeviceController::class, 'registerDevice']);
+        Route::delete('/unregister/{token}', [DeviceController::class, 'unregisterDevice']);
+    });
+
+
+
+
     // Auth routes
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
