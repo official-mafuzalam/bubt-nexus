@@ -7,13 +7,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Laravel\Sanctum\HasApiTokens; // Add this line
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles, HasApiTokens; // Add HasApiTokens here
+    use HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles, HasApiTokens;
 
     protected $fillable = [
         'name',
@@ -30,7 +30,7 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected $appends = [ // Add this section
+    protected $appends = [
         'user_type',
         'is_student',
         'is_faculty'
@@ -56,7 +56,7 @@ class User extends Authenticatable
     /**
      * Check if user is a student
      */
-    public function getIsStudentAttribute(): bool // Change to attribute
+    public function getIsStudentAttribute(): bool
     {
         return $this->userDetail && $this->userDetail->student_id !== null;
     }
@@ -64,7 +64,7 @@ class User extends Authenticatable
     /**
      * Check if user is faculty
      */
-    public function getIsFacultyAttribute(): bool // Change to attribute
+    public function getIsFacultyAttribute(): bool
     {
         return $this->userDetail && $this->userDetail->faculty_id !== null;
     }

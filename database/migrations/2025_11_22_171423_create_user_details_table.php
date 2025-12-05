@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    public function up()
+    public function up(): void
     {
         Schema::create('user_details', function (Blueprint $table) {
             $table->id();
@@ -15,12 +15,12 @@ return new class extends Migration {
             $table->string('semester')->nullable();
             $table->string('intake')->nullable();
             $table->string('program')->nullable();
-            $table->string('student_id')->nullable();
+            $table->string('student_id')->nullable()->unique();
             $table->decimal('cgpa', 3, 2)->nullable();
 
             // Faculty fields
             $table->string('department')->nullable();
-            $table->string('faculty_id')->nullable();
+            $table->string('faculty_id')->nullable()->unique();
             $table->string('designation')->nullable();
             $table->string('office_room')->nullable();
             $table->string('office_hours')->nullable();
@@ -41,7 +41,7 @@ return new class extends Migration {
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::dropIfExists('user_details');
     }

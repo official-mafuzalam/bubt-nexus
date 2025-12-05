@@ -68,7 +68,7 @@ class UserDetail extends Model
         } elseif ($this->faculty_id) {
             return 'Faculty';
         }
-        
+
         return 'Unknown';
     }
 }
