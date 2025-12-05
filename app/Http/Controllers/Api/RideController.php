@@ -272,7 +272,11 @@ class RideController extends Controller
                     ], 400);
                 }
 
-                // Create a new event for request status updates
+                // UPDATE THE STATUS FIRST
+                $rideRequest->status = 'accepted';
+                $rideRequest->save();
+
+                // Broadcast after updating status
                 broadcast(new RideRequestStatusUpdated($rideRequest));
 
                 $ride->available_seats -= $rideRequest->requested_seats;
@@ -292,6 +296,9 @@ class RideController extends Controller
             } else {
                 $rideRequest->status = 'rejected';
                 $rideRequest->save();
+
+                // Broadcast after updating status
+                broadcast(new RideRequestStatusUpdated($rideRequest));
 
                 // Send notification to passenger
                 $this->sendPushNotification(
