@@ -39,22 +39,21 @@ import {
     Edit,
     GraduationCap,
     Hash,
+    Key,
     Mail,
     Phone,
+    Plus,
     School,
     ShieldCheck,
+    ShieldOff,
     Trash2,
     User,
     UserCheck,
-    UsersIcon,
-    X,
-    UserX,
     UserCog,
-    Plus,
     Users,
-    Key,
-    ShieldOff,
-    
+    UsersIcon,
+    UserX,
+    X,
 } from 'lucide-vue-next';
 
 // ✅ Receive user data from Laravel
@@ -695,9 +694,10 @@ function getGuardClasses(guard: string) {
                                             >
                                                 {{
                                                     user.user_detail.cgpa
-                                                        ? user.user_detail.cgpa.toFixed(
-                                                              2,
-                                                          )
+                                                        ? Number(
+                                                              user.user_detail
+                                                                  .cgpa,
+                                                          ).toFixed(2)
                                                         : 'Not specified'
                                                 }}
                                             </p>
