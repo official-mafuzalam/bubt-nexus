@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Reverb WebSocket Test</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            .status {
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+            }
+            .connected {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            .disconnected {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+            .connecting {
+                background: #fff3cd;
+                color: #856404;
+                border: 1px solid #ffeaa7;
+            }
+            .log {
+                background: #f8f9fa;
+                padding: 10px;
+                margin: 10px 0;
+                border: 1px solid #ddd;
+                max-height: 300px;
+                overflow-y: auto;
+            }
+            .log-item {
+                margin: 5px 0;
+                padding: 5px;
+                border-bottom: 1px solid #eee;
+            }
+            .log-item.success {
+                color: #28a745;
+            }
+            .log-item.error {
+                color: #dc3545;
+            }
+            .log-item.info {
+                color: #17a2b8;
+            }
+            input,
+            button {
+                padding: 8px;
+                margin: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Reverb WebSocket Test</h2>
+
+        <div>
+            <label>App Key:</label>
+            <input
+                type="text"
+                id="appKey"
+                value="cap8vgtxla7qohrt549h"
+                style="width: 300px"
+            />
+        </div>
+
+        <div>
+            <label>Sanctum Token (optional for private channels):</label>
+            <input
+                type="text"
+                id="token"
+                placeholder="Enter token for private channels"
+                style="width: 400px"
+            />
+        </div>
+
+        <div>
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+            <button onclick="testSubscribe()">Subscribe to Test Channel</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div id="status" class="status disconnected">Disconnected</div>
+
+        <div>
+            <h3>Connection Log:</h3>
+            <div id="log" class="log"></div>
+        </div>
+
+        <div>
+            <h3>Send Custom Message:</h3>
+            <input
+                type="text"
+                id="channelInput"
+                placeholder="Channel name"
+                value="test-channel"
+            />
+            <input
+                type="text"
+                id="eventInput"
+                placeholder="Event name"
+                value="test-event"
+            />
+            <input
+                type="text"
+                id="dataInput"
+                placeholder="Data (JSON)"
+                value='{"message": "Hello"}'
+            />
+            <button onclick="sendCustomMessage()">Send Message</button>
+        </div>
+
+        <script>
+            let socket = null;
+            const logElement = document.getElementById('log');
+            const statusElement = document.getElementById('status');
+
+            function logMessage(message, type = 'info') {
+                const logItem = document.createElement('div');
+                logItem.className = `log-item ${type}`;
+                logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logElement.appendChild(logItem);
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+
+            function updateStatus(status, className) {
+                statusElement.textContent = status;
+                statusElement.className = `status ${className}`;
+            }
+
+            function connect() {
+                const appKey = document.getElementById('appKey').value;
+
+                if (!appKey) {
+                    alert('Please enter App Key');
+                    return;
+                }
+
+                updateStatus('Connecting...', 'connecting');
+
+                // Create WebSocket connection
+                const url = `ws://127.0.0.1:8080/app/${appKey}?protocol=7&client=js&version=7.0.0`;
+                logMessage(`Connecting to: ${url}`, 'info');
+
+                socket = new WebSocket(url);
+
+                socket.onopen = function (e) {
+                    updateStatus('Connected', 'connected');
+                    logMessage('WebSocket connection opened', 'success');
+
+                    // Send connection confirmation
+                    const connectMsg = {
+                        event: 'pusher:connection_established',
+                        data: {
+                            socket_id: 'test_socket_' + Date.now(),
+                            activity_timeout: 30,
+                        },
+                    };
+                    socket.send(JSON.stringify(connectMsg));
+                };
+
+                socket.onmessage = function (event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        logMessage(`Received: ${JSON.stringify(data)}`, 'info');
+
+                        if (data.event === 'pusher:connection_established') {
+                            logMessage(
+                                'Connection established successfully!',
+                                'success',
+                            );
+                        } else if (data.event === 'pusher:error') {
+                            logMessage(
+                                `Error: ${JSON.stringify(data.data)}`,
+                                'error',
+                            );
+                        }
+                    } catch (e) {
+                        logMessage(`Received non-JSON: ${event.data}`, 'error');
+                    }
+                };
+
+                socket.onerror = function (error) {
+                    logMessage(
+                        `WebSocket Error: ${JSON.stringify(error)}`,
+                        'error',
+                    );
+                    updateStatus('Error', 'disconnected');
+                };
+
+                socket.onclose = function (event) {
+                    logMessage(
+                        `Connection closed. Code: ${event.code}, Reason: ${event.reason}`,
+                        'info',
+                    );
+                    updateStatus('Disconnected', 'disconnected');
+                };
+            }
+
+            function disconnect() {
+                if (socket) {
+                    socket.close();
+                    socket = null;
+                }
+            }
+
+            function testSubscribe() {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    alert('Please connect first');
+                    return;
+                }
+
+                const channelName = 'test-channel';
+                const token = document.getElementById('token').value;
+
+                const subscribeMsg = {
+                    event: 'pusher:subscribe',
+                    data: {
+                        channel: channelName,
+                        auth: token || undefined,
+                    },
+                };
+
+                socket.send(JSON.stringify(subscribeMsg));
+                logMessage(`Subscribing to channel: ${channelName}`, 'info');
+            }
+
+            function sendCustomMessage() {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    alert('Please connect first');
+                    return;
+                }
+
+                const channel = document.getElementById('channelInput').value;
+                const event = document.getElementById('eventInput').value;
+                const data = document.getElementById('dataInput').value;
+
+                try {
+                    const parsedData = JSON.parse(data);
+                    const message = {
+                        event: event,
+                        channel: channel,
+                        data: parsedData,
+                    };
+
+                    socket.send(JSON.stringify(message));
+                    logMessage(`Sent: ${JSON.stringify(message)}`, 'info');
+                } catch (e) {
+                    alert('Invalid JSON data');
+                }
+            }
+
+            function clearLog() {
+                logElement.innerHTML = '';
+            }
+
+            // Auto-connect on page load
+            window.addEventListener('load', function () {
+                logMessage('Page loaded. Click Connect to start.', 'info');
+            });
+        </script>
+    </body>
+</html>
