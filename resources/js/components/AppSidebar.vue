@@ -11,6 +11,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useAuth } from '@/composables/useAuth';
 import { dashboard } from '@/routes';
 import { index as apiIndex } from '@/routes/admin/api';
 import { index as notesIndex } from '@/routes/admin/notes';
@@ -33,6 +34,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import AppLogo from './AppLogo.vue';
+const { hasRole, hasPermission, can } = useAuth();
 
 // Track expanded state for the Accounts group - closed by default
 const isAccountsExpanded = ref(false);
@@ -64,51 +66,107 @@ watch(
     { immediate: true },
 );
 
-const mainNavItems: NavItem[] = [
-    {
+// Check if accounts section should be shown
+const showAccountsSection = computed(() => {
+    return can({
+        roles: ['super_admin', 'admin'],
+        permissions: ['role', 'permission', 'user'],
+    });
+});
+
+// Main navigation items with access control
+const mainNavItems = computed(() => {
+    const items: NavItem[] = [];
+
+    // Dashboard - available to all authenticated users
+    items.push({
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
-    },
-    {
-        title: 'Notes',
-        href: notesIndex(),
-        icon: Users,
-    },
-    {
-        title: 'Routines',
-        href: routineIndex(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'API Documentation',
-        href: apiIndex(),
-        icon: ArrowUpRightFromSquare,
-    },
-    {
-        title: 'Site Settings',
-        href: settingsIndex(),
-        icon: Settings,
-    },
-];
+    });
 
-const accountsNavItems: NavItem[] = [
-    {
-        title: 'Roles',
-        href: roles.index(),
-        icon: Shield,
-    },
-    {
-        title: 'Permissions',
-        href: permissions.index(),
-        icon: Key,
-    },
-    {
-        title: 'Users',
-        href: users.index(),
-        icon: Users,
-    },
-];
+    // Notes - check role or permission
+    if (
+        can({
+            roles: ['super_admin', 'admin', 'faculty'],
+            permissions: ['notes_view'], // Add this permission to your permissions table
+        })
+    ) {
+        items.push({
+            title: 'Notes',
+            href: notesIndex(),
+            icon: Users,
+        });
+    }
+
+    // Routines - check role or permission
+    if (
+        can({
+            roles: ['super_admin', 'admin', 'faculty', 'student'],
+            permissions: ['routines_view'], // Add this permission to your permissions table
+        })
+    ) {
+        items.push({
+            title: 'Routines',
+            href: routineIndex(),
+            icon: LayoutGrid,
+        });
+    }
+
+    // API Documentation - for specific roles only
+    if (hasRole(['super_admin', 'admin'])) {
+        items.push({
+            title: 'API Documentation',
+            href: apiIndex(),
+            icon: ArrowUpRightFromSquare,
+        });
+    }
+
+    // Site Settings - for super_admin only or specific permission
+    if (hasRole('super_admin') || hasPermission('site_settings')) {
+        items.push({
+            title: 'Site Settings',
+            href: settingsIndex(),
+            icon: Settings,
+        });
+    }
+
+    return items;
+});
+
+// Accounts navigation items with granular permission checks
+const accountsNavItems = computed(() => {
+    const items: NavItem[] = [];
+
+    // Roles - check for role permission
+    if (hasPermission('role')) {
+        items.push({
+            title: 'Roles',
+            href: roles.index(),
+            icon: Shield,
+        });
+    }
+
+    // Permissions - check for permission permission
+    if (hasPermission('permission')) {
+        items.push({
+            title: 'Permissions',
+            href: permissions.index(),
+            icon: Key,
+        });
+    }
+
+    // Users - check for user permission
+    if (hasPermission('user')) {
+        items.push({
+            title: 'Users',
+            href: users.index(),
+            icon: Users,
+        });
+    }
+
+    return items;
+});
 
 const footerNavItems: NavItem[] = [
     {
@@ -137,7 +195,11 @@ const footerNavItems: NavItem[] = [
             <NavMain :items="mainNavItems" />
 
             <!-- Accounts Group with expand/collapse functionality -->
-            <div class="px-2 py-1">
+            <!-- Only show if user has access to any account item -->
+            <div
+                v-if="showAccountsSection && accountsNavItems.length > 0"
+                class="px-2 py-1"
+            >
                 <button
                     @click="isAccountsExpanded = !isAccountsExpanded"
                     class="flex w-full items-center justify-between rounded-md p-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -156,7 +218,7 @@ const footerNavItems: NavItem[] = [
                     />
                 </button>
 
-                <!-- Child items -->
+                <!-- Child items - only show if expanded -->
                 <div v-if="isAccountsExpanded" class="mt-1 ml-4 space-y-1">
                     <NavMain :items="accountsNavItems" />
                 </div>

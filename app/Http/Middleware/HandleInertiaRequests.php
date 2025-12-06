@@ -33,9 +33,9 @@ class HandleInertiaRequests extends Middleware
             // App Name
             'name' => config('app.name'),
 
-            // Authenticated User
+            // Authenticated User with roles and permissions
             'auth' => [
-                'user' => $request->user(),
+                'user' => $this->getUserData($request),
             ],
 
             // Sidebar State
@@ -43,15 +43,45 @@ class HandleInertiaRequests extends Middleware
 
             // Flash Messages
             'flash' => [
-                'success' => fn () => $request->session()->get('success'),
-                'error'   => fn () => $request->session()->get('error'),
-                'warning' => fn () => $request->session()->get('warning'),
-                'info'    => fn () => $request->session()->get('info'),
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
+                'warning' => fn() => $request->session()->get('warning'),
+                'info' => fn() => $request->session()->get('info'),
             ],
 
             // Global Settings
-            'settings' => fn () => $this->getAllSettings(),
+            'settings' => fn() => $this->getAllSettings(),
         ];
+    }
+
+    /**
+     * Get user data with roles and permissions.
+     */
+    protected function getUserData(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return null;
+        }
+
+        // Cache user roles and permissions for better performance
+        $cacheKey = "user_{$user->id}_auth_data";
+        $cacheTime = 300; // 5 minutes
+
+        return Cache::remember($cacheKey, $cacheTime, function () use ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->getRoleNames()->toArray(),
+                'permissions' => $user->getAllPermissions()->pluck('name')->toArray(),
+                // Add any other user fields you need
+                // 'avatar' => $user->avatar,
+                // 'username' => $user->username,
+                // 'created_at' => $user->created_at->toDateTimeString(),
+            ];
+        });
     }
 
     /**

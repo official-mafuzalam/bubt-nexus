@@ -21,8 +21,17 @@ class AdminSeeder extends Seeder
                 'password' => bcrypt('password'), // Use bcrypt for hashing passwords
             ]
         );
+        $user1 = User::create(
+            [
+                'name' => 'Student',
+                'email' => 'student@gmail.com',
+                'email_verified_at' => now(),
+                'password' => bcrypt('password'), // Use bcrypt for hashing passwords
+            ]
+        );
 
         // Assign roles
         $user->assignRole('super_admin', 'admin', 'user');
+        $user1->assignRole('student');
     }
 }
