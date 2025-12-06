@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ClassRoutine;
 use Illuminate\Http\Request;
-use GuzzleHttp\Client;
-use Symfony\Component\DomCrawler\Crawler;
+use Illuminate\Support\Facades\DB;
 
 class RoutineController extends Controller
 {
@@ -13,224 +13,157 @@ class RoutineController extends Controller
     {
         $request->validate([
             'program' => 'required|string',
-            'semester' => 'required|string',
             'intake' => 'required|string',
+            'section' => 'required|string',
         ]);
 
-        $program = $request->program;
-        $semester = $request->semester;
-        $intakeName = trim($request->intake);
-
-        $url = "https://annex.bubt.edu.bd/global_file/routine.php?p={$program}&semNo={$semester}";
-
         try {
-            $client = new Client();
-            $response = $client->get($url);
-            $html = (string) $response->getBody();
+            // Parse intake and section
+            $intakeInfo = ClassRoutine::parseIntakeString($request->intake);
 
-            $crawler = new Crawler($html);
+            // Find the program by code
+            $program = DB::table('programs')
+                ->where('code', $request->program)
+                ->orWhere('name', 'like', '%' . $request->program . '%')
+                ->first();
 
-            // Step 1: Find all tables and identify which one belongs to our intake
-            $tables = $crawler->filter('table');
-            $targetTable = null;
-            $programName = '';
-            $semesterInfo = '';
-
-            // Look through all tables to find the one for our intake
-            foreach ($tables as $table) {
-                $tableCrawler = new Crawler($table);
-
-                // Get all text content around this table
-                $surroundingText = $this->getSurroundingText($tableCrawler);
-
-                // Check if this table has our intake
-                if (str_contains($surroundingText, "Intake: {$intakeName}")) {
-                    $targetTable = $tableCrawler;
-
-                    // Extract program and semester info from surrounding text
-                    if (preg_match('/Program:\s*([^\n]+)/', $surroundingText, $programMatch)) {
-                        $programName = trim($programMatch[1]);
-                    }
-                    if (preg_match('/Semester:\s*([^\n]+)/', $surroundingText, $semesterMatch)) {
-                        $semesterInfo = trim($semesterMatch[1]);
-                    }
-                    break;
-                }
-            }
-
-            if (!$targetTable) {
+            if (!$program) {
                 return response()->json([
-                    'error' => 'Routine table not found for this intake on BUBT Website.'
+                    'status' => false,
+                    'message' => 'Program not found',
+                    'routine' => null,
                 ], 404);
             }
 
-            // Step 2: Convert HTML table → JSON
-            $rows = $targetTable->filter('tr');
-            $jsonData = [];
+            // Get routines for the specified program, intake, and section
+            $routines = ClassRoutine::with('program')
+                ->where('program_id', $program->id)
+                ->where('intake', $intakeInfo['intake'])
+                ->where('section', $intakeInfo['section'])
+                ->active()
+                ->orderByDayTime()
+                ->get();
 
-            // Extract time slots from header
-            $headerCells = $rows->first()->filter('td, th')->each(function ($th) {
-                return trim($th->text());
-            });
-
-            // Remove "Day/Time" first column header
-            array_shift($headerCells);
-
-            // Define day names that might appear in the table
-            $possibleDayNames = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THR', 'FRI'];
-
-            // Function to parse course information from table cell
-            $parseCourseInfo = function ($cellText) {
-                if (empty(trim($cellText))) {
-                    return [];
-                }
-
-                $courses = [];
-                // Split multiple courses in one cell by new lines first
-                $courseBlocks = preg_split('/\n+/', trim($cellText));
-
-                foreach ($courseBlocks as $block) {
-                    $block = trim($block);
-                    if (empty($block))
-                        continue;
-
-                    $courseCode = '';
-                    $facultyCode = '';
-                    $room = '';
-
-                    // Try different patterns to extract course info
-                    $patterns = [
-                        // Pattern for: "CSE 319 FC: AHS R: 2320"
-                        '/^([A-Z]{2,}\s*\d+[A-Z]*)\s+FC:\s*([A-Za-z]+)\s+R:\s*(\d+)$/',
-                        // Pattern for: "CSE 319\nFC: AHS\nR: 2320" (already split by new lines)
-                        '/^([A-Z]{2,}\s*\d+[A-Z]*)$/'
-                    ];
-
-                    $isCourseCodeLine = preg_match($patterns[1], $block, $matches) || preg_match($patterns[0], $block, $matches);
-
-                    if ($isCourseCodeLine && !empty($matches[1])) {
-                        $courseCode = $matches[1];
-                        $facultyCode = $matches[2] ?? '';
-                        $room = $matches[3] ?? '';
-                    } else {
-                        // Check if this is a faculty code line
-                        if (str_starts_with($block, 'FC:')) {
-                            $facultyCode = trim(substr($block, 3));
-                        }
-                        // Check if this is a room line
-                        elseif (str_starts_with($block, 'R:')) {
-                            $room = trim(substr($block, 2));
-                        }
-                        // Otherwise, assume it's a course code
-                        else {
-                            $courseCode = $block;
-                        }
-                    }
-
-                    if (!empty($courseCode)) {
-                        $courses[] = [
-                            'course_code' => $courseCode,
-                            'faculty_code' => $facultyCode,
-                            'room' => $room,
-                        ];
-                    }
-                }
-
-                return $courses;
-            };
-
-            // Process each row (skip header row)
-            for ($rowIndex = 1; $rowIndex < $rows->count(); $rowIndex++) {
-                $rowNode = $rows->eq($rowIndex);
-                $cells = $rowNode->filter('td');
-
-                if ($cells->count() === 0)
-                    continue;
-
-                // Get day from first cell
-                $day = trim($cells->first()->text());
-
-                // Skip if this doesn't look like a day row
-                if (!in_array($day, $possibleDayNames)) {
-                    continue;
-                }
-
-                $hasClasses = false;
-                $timeSlots = [];
-
-                // Process each time slot (skip first cell which is the day)
-                for ($i = 1; $i < $cells->count() && ($i - 1) < count($headerCells); $i++) {
-                    $cellNode = $cells->eq($i);
-                    $timeSlot = $headerCells[$i - 1] ?? "";
-
-                    $cellText = $cellNode->text();
-
-                    if (!empty(trim($cellText))) {
-                        $parsedCourses = $parseCourseInfo($cellText);
-
-                        foreach ($parsedCourses as $courseInfo) {
-                            if (!empty($courseInfo['course_code'])) {
-                                $timeSlots[] = [
-                                    'time' => $timeSlot,
-                                    'course_code' => $courseInfo['course_code'],
-                                    'faculty_code' => $courseInfo['faculty_code'],
-                                    'room' => $courseInfo['room']
-                                ];
-                                $hasClasses = true;
-                            }
-                        }
-                    }
-                }
-
-                // Only include days that have at least one class
-                if ($hasClasses) {
-                    $jsonData[] = [
-                        'day' => $day,
-                        'classes' => $timeSlots
-                    ];
-                }
+            if ($routines->isEmpty()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No routine found for the given criteria',
+                    'program' => $program->code,
+                    'intake' => $request->intake,
+                    'section' => $intakeInfo['section'],
+                    'routine' => [],
+                ], 404);
             }
+
+            // Group routines by day for display
+            $groupedRoutines = ClassRoutine::groupByDay($routines)
+                ->map(function ($dayRoutines) {
+                    $result = [
+                        'day' => $dayRoutines->first()->day,
+                    ];
+
+                    foreach ($dayRoutines as $routine) {
+                        $result[$routine->time_slot] = $routine->class_details;
+                    }
+
+                    return $result;
+                });
+
+            // Sort days in order: SAT, SUN, MON, TUE, WED, THU, FRI
+            $sortedRoutines = $groupedRoutines->sortBy(function ($value, $key) {
+                // Define day order (note: using THR instead of THU as per your data)
+                $daysOrder = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THR', 'FRI'];
+                return array_search(strtoupper($key), $daysOrder);
+            })->values();
+
+            // Get the first routine to extract common info
+            $firstRoutine = $routines->first();
+
+            // Sort detailed_routines by day and time
+            $sortedDetailedRoutines = $routines->sort(function ($a, $b) {
+                // Define day order
+                $daysOrder = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THR', 'FRI'];
+
+                $aDayIndex = array_search(strtoupper($a->day), $daysOrder);
+                $bDayIndex = array_search(strtoupper($b->day), $daysOrder);
+
+                // First sort by day
+                if ($aDayIndex !== $bDayIndex) {
+                    return $aDayIndex - $bDayIndex;
+                }
+
+                // Then sort by start time
+                return strtotime($a->start_time) - strtotime($b->start_time);
+            })->values();
 
             return response()->json([
                 'status' => true,
-                'program' => $programName ?: $program,
-                'intake' => $intakeName,
-                'semester' => $semesterInfo ?: $semester,
-                'routine' => $jsonData
+                'message' => 'Routine retrieved successfully',
+                'program' => $program->code,
+                'program_name' => $program->name,
+                'intake' => $request->intake,
+                'section' => $intakeInfo['section'],
+                'semester' => $firstRoutine->semester,
+                'routine' => $sortedRoutines,
+                'detailed_routines' => $sortedDetailedRoutines->map(function ($routine) {
+                    return [
+                        'id' => $routine->id,
+                        'day' => $routine->day,
+                        'time_slot' => $routine->time_slot,
+                        'formatted_time' => $routine->formatted_time,
+                        'course_code' => $routine->course_code,
+                        'course_name' => $routine->course_name,
+                        'teacher_code' => $routine->teacher_code,
+                        'teacher_name' => $routine->teacher_name,
+                        'room_number' => $routine->room_number,
+                        'room_type' => $routine->room_type,
+                        'class_details' => $routine->class_details,
+                        'status' => $routine->status,
+                    ];
+                }),
+                'meta' => [
+                    'total_classes' => $routines->count(),
+                    'days_count' => $sortedRoutines->count(),
+                    'unique_courses' => $routines->unique('course_code')->count(),
+                    'unique_teachers' => $routines->unique('teacher_code')->count(),
+                ],
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'Error fetching routine',
-                'details' => $e->getMessage()
+                'status' => false,
+                'message' => 'Error retrieving routine: ' . $e->getMessage(),
+                'routine' => null,
             ], 500);
         }
     }
 
+    // Update the groupByDay method in your ClassRoutine model to sort properly
     /**
-     * Helper function to get text content surrounding a table
+     * Group routines by day for display.
      */
-    private function getSurroundingText(Crawler $tableCrawler)
+    public static function groupByDay($routines)
     {
-        $text = '';
+        return $routines->groupBy('day')->map(function ($dayRoutines) {
+            return $dayRoutines->sortBy('start_time')->values();
+        })->sortBy(function ($value, $key) {
+            // Define day order (using THR instead of THU as per your data)
+            $daysOrder = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THR', 'FRI'];
+            return array_search(strtoupper($key), $daysOrder);
+        });
+    }
 
-        // Get previous siblings (text before the table)
-        $prevNode = $tableCrawler->getNode(0)->previousSibling;
-        while ($prevNode) {
-            if ($prevNode->nodeType === XML_TEXT_NODE) {
-                $text = trim($prevNode->textContent) . ' ' . $text;
-            } elseif ($prevNode->nodeType === XML_ELEMENT_NODE) {
-                $elementText = trim((new Crawler($prevNode))->text());
-                if (!empty($elementText)) {
-                    $text = $elementText . ' ' . $text;
-                }
-            }
-            $prevNode = $prevNode->previousSibling;
-        }
-
-        // Get the table's own text (headers, etc.)
-        $text .= ' ' . $tableCrawler->text();
-
-        return $text;
+    // Also update the orderByDayTime scope in your ClassRoutine model:
+    /**
+     * Order query by day and time.
+     */
+    public function scopeOrderByDayTime($query)
+    {
+        // Using THR instead of THU as per your data
+        return $query->orderByRaw("
+            FIELD(day, 'SAT', 'SUN', 'MON', 'TUE', 'WED', 'THR', 'FRI'),
+            start_time,
+            slot_order
+        ");
     }
 }

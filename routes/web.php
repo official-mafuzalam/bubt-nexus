@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\NotesController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\RoutineController;
+use App\Http\Controllers\Admin\RoutineScraperController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Public\HomeController as PublicHomeController;
@@ -27,6 +29,21 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|stud
     Route::post('/notes', [NotesController::class, 'store'])->name('admin.notes.store');
     Route::delete('/notes/{note}', [NotesController::class, 'destroy'])->name('admin.notes.destroy');
 
+
+    // Routine Management Routes
+    Route::resource('routines', RoutineController::class)->names('admin.routines');
+    Route::post('routines/bulk-destroy', [RoutineController::class, 'bulkDestroy'])->name('admin.routines.bulk-destroy');
+    Route::get('routines/export', [RoutineController::class, 'export'])->name('admin.routines.export');
+    Route::get('routines/filter-options', [RoutineController::class, 'getFilterOptions'])->name('admin.routines.filter-options');
+
+
+
+
+    Route::prefix('scraper')->group(function () {
+        Route::get('/program/{code}', [RoutineScraperController::class, 'scrapeProgram']);
+        Route::get('/status', [RoutineScraperController::class, 'getStatus']);
+    });
+
     Route::get('/api-documentation', [ApiController::class, 'index'])->name('admin.api.index');
 
     Route::get('/settings', [SettingController::class, 'index'])->name('admin.settings.index');
@@ -37,7 +54,7 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|stud
 
 // Super Admin Dashboard Routes
 Route::middleware(['auth', 'verified', 'role:super_admin'])->prefix('admin-dashboard')->group(function () {
-    
+
     Route::resource('roles', RoleController::class)->names('admin.roles');
     // Additional permission routes
     Route::post('/roles/{role}/permissions', [RoleController::class, 'givePermission'])->name('admin.roles.permissions.give');

@@ -50,14 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/{user}', [UserController::class, 'show']);
     Route::get('/me', [UserController::class, 'me']);
     Route::put('/profile-update', [UserController::class, 'updateProfile']);
-    
     Route::post('/logout', [AuthController::class, 'logout']);
 });
 
 
-
 Route::get('notices', [HomeController::class, 'notices']);
-Route::get('/routine', [RoutineController::class, 'getRoutine']);
+Route::post('/routine', [RoutineController::class, 'getRoutine']);
 
 // 60 = number of requests allowed
 // 1 = number of minutes

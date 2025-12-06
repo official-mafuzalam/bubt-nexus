@@ -12,11 +12,12 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import { index as settingsIndex } from '@/routes/admin/settings';
 import { index as apiIndex } from '@/routes/admin/api';
 import { index as notesIndex } from '@/routes/admin/notes';
 import permissions from '@/routes/admin/permissions';
 import roles from '@/routes/admin/roles';
+import { index as routineIndex } from '@/routes/admin/routines';
+import { index as settingsIndex } from '@/routes/admin/settings';
 import users from '@/routes/admin/users';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -26,8 +27,9 @@ import {
     ChevronDown,
     Key,
     LayoutGrid,
+    Settings,
     Shield,
-    Users, Settings
+    Users,
 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import AppLogo from './AppLogo.vue';
@@ -74,6 +76,11 @@ const mainNavItems: NavItem[] = [
         icon: Users,
     },
     {
+        title: 'Routines',
+        href: routineIndex(),
+        icon: LayoutGrid,
+    },
+    {
         title: 'API Documentation',
         href: apiIndex(),
         icon: ArrowUpRightFromSquare,
@@ -82,7 +89,7 @@ const mainNavItems: NavItem[] = [
         title: 'Site Settings',
         href: settingsIndex(),
         icon: Settings,
-    }
+    },
 ];
 
 const accountsNavItems: NavItem[] = [

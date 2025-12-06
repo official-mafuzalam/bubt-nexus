@@ -33,4 +33,11 @@ class Program extends Model
     {
         return $this->hasMany(UserDetail::class)->whereNotNull('student_id');
     }
+    /**
+     * Get the class routines for this program.
+     */
+    public function classRoutines(): HasMany
+    {
+        return $this->hasMany(ClassRoutine::class);
+    }
 }
