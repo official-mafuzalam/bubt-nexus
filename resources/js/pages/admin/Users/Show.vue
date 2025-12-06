@@ -46,8 +46,15 @@ import {
     Trash2,
     User,
     UserCheck,
-    Users as UsersIcon,
+    UsersIcon,
+    X,
     UserX,
+    UserCog,
+    Plus,
+    Users,
+    Key,
+    ShieldOff,
+    
 } from 'lucide-vue-next';
 
 // ✅ Receive user data from Laravel
