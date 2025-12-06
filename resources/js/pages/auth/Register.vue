@@ -21,7 +21,7 @@ import { ref } from 'vue';
 // Add props if your controller passes programs data
 interface Props {
     programs?: Array<{ id: number; name: string; code: string }>;
-    semesterOptions?: string[];
+    semesterOptions?: Record<string, number>;
     departments?: string[];
     designations?: string[];
 }
@@ -274,11 +274,11 @@ const sectionOptions = Array.from({ length: 20 }, (_, i) => (i + 1).toString());
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem
-                                                v-for="option in semesterOptions"
-                                                :key="option"
-                                                :value="option"
+                                                v-for="(value, key) in semesterOptions"
+                                                :key="value"
+                                                :value="String(value)"
                                             >
-                                                {{ option }}
+                                                {{ key }}
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>

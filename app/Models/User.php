@@ -34,7 +34,6 @@ class User extends Authenticatable
         'user_type',
         'is_student',
         'is_faculty',
-        'program'  // Added to access program through user detail
     ];
 
     protected function casts(): array
@@ -45,6 +44,7 @@ class User extends Authenticatable
             'last_seen_at' => 'datetime',
         ];
     }
+
 
     /**
      * Get the user details associated with the user.
@@ -67,7 +67,6 @@ class User extends Authenticatable
      */
     public function getIsFacultyAttribute(): bool
     {
-        // Fixed: Changed from faculty_id to faculty_code
         return $this->userDetail && $this->userDetail->faculty_code !== null;
     }
 
@@ -82,19 +81,11 @@ class User extends Authenticatable
 
         if ($this->userDetail->student_id) {
             return 'Student';
-        } elseif ($this->userDetail->faculty_code) { // Fixed: Changed from faculty_id to faculty_code
+        } elseif ($this->userDetail->faculty_code) {
             return 'Faculty';
         }
 
         return 'Unknown';
-    }
-
-    /**
-     * Get program through user details
-     */
-    public function getProgramAttribute()
-    {
-        return $this->userDetail?->program;
     }
 
     /**
@@ -112,7 +103,6 @@ class User extends Authenticatable
     {
         return $this->userDetail?->program?->code;
     }
-
     /**
      * Scope for students
      */

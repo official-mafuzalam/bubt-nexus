@@ -58,7 +58,7 @@ class UserController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user()->load('userDetail', 'roles', 'permissions');
+        $user = $request->user()->load('userDetail.program', 'roles', 'permissions');
 
         return response()->json([
             'success' => true,

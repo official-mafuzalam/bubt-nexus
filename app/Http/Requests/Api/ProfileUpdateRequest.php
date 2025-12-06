@@ -42,11 +42,11 @@ class ProfileUpdateRequest extends FormRequest
                 'max:50',
                 Rule::unique('user_details', 'student_id')->ignore($userId, 'user_id'),
             ],
-            'faculty_id' => [
+            'faculty_code' => [
                 'nullable',
                 'string',
                 'max:50',
-                Rule::unique('user_details', 'faculty_id')->ignore($userId, 'user_id'),
+                Rule::unique('user_details', 'faculty_code')->ignore($userId, 'user_id'),
             ],
             'program' => 'nullable|string|max:100',
             'semester' => 'nullable|string|max:50',
@@ -54,12 +54,7 @@ class ProfileUpdateRequest extends FormRequest
             'cgpa' => 'nullable|numeric|min:0|max:4.0',
             'department' => 'nullable|string|max:100',
             'designation' => 'nullable|string|max:100',
-            'office_room' => 'nullable|string|max:50',
-            'office_hours' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string|max:500',
-            'date_of_birth' => 'nullable|date',
-            'emergency_contact' => 'nullable|string|max:100',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ];
     }

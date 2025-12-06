@@ -14,7 +14,8 @@ class UserDetailResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return [
+        // Start with basic fields from the model
+        $data = [
             'id' => $this->id,
             'user_id' => $this->user_id,
             'is_verified' => $this->is_verified,
@@ -25,8 +26,6 @@ class UserDetailResource extends JsonResource
             'section' => $this->section,
             'student_id' => $this->student_id,
             'cgpa' => $this->cgpa,
-            'program_id' => $this->program_id,
-            'program' => new ProgramResource($this->whenLoaded('program')),
 
             // Faculty fields
             'department' => $this->department,
@@ -39,8 +38,29 @@ class UserDetailResource extends JsonResource
                 ? asset('storage/' . $this->profile_picture)
                 : null,
 
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'created_at' => $this->created_at?->toISOString(),
+            'updated_at' => $this->updated_at?->toISOString(),
+
+            // User type - get it from the accessor
+            'user_type' => $this->user_type,
         ];
+
+        // Add program data if the relationship is loaded
+        if ($this->relationLoaded('program')) {
+            if ($this->program) {
+                $data['program'] = [
+                    'id' => $this->program->id,
+                    'name' => $this->program->name,
+                    'code' => $this->program->code,
+                ];
+            } else {
+                $data['program'] = null;
+            }
+        } else {
+            // If program relationship is not loaded, set it to null
+            $data['program'] = null;
+        }
+
+        return $data;
     }
 }

@@ -92,7 +92,7 @@ const props = defineProps<{
                 name: string;
                 code: string;
             };
-            user_type: 'Student' | 'Faculty' | 'Unknown';
+            user_type?: string; // Made optional
         } | null;
     };
     allRoles: Array<{
@@ -132,49 +132,82 @@ const availablePermissions = props.allPermissions.filter(
 );
 
 // ✅ Format date for display
-function formatDate(dateString: string) {
+function formatDate(dateString: string | undefined): string {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    try {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    } catch {
+        return 'Invalid date';
+    }
 }
 
 // ✅ Format relative time
-function formatRelativeTime(dateString: string) {
+function formatRelativeTime(dateString: string | undefined): string {
     if (!dateString) return 'Never';
 
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInMs = now.getTime() - date.getTime();
+        const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+        const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
-    if (diffInHours < 24) return `${diffInHours} hours ago`;
-    if (diffInDays < 7) return `${diffInDays} days ago`;
+        if (diffInMinutes < 1) return 'Just now';
+        if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+        if (diffInHours < 24) return `${diffInHours} hours ago`;
+        if (diffInDays < 7) return `${diffInDays} days ago`;
 
-    return formatDate(dateString);
+        return formatDate(dateString);
+    } catch {
+        return 'Invalid date';
+    }
 }
 
 // ✅ Check if user is recently active (within last 5 minutes)
-function isRecentlyActive() {
+function isRecentlyActive(): boolean {
     if (!props.user.last_seen_at) return false;
-    const lastSeen = new Date(props.user.last_seen_at);
-    const now = new Date();
-    const diffInMinutes = (now.getTime() - lastSeen.getTime()) / (1000 * 60);
-    return diffInMinutes < 5;
+    try {
+        const lastSeen = new Date(props.user.last_seen_at);
+        const now = new Date();
+        const diffInMinutes =
+            (now.getTime() - lastSeen.getTime()) / (1000 * 60);
+        return diffInMinutes < 5;
+    } catch {
+        return false;
+    }
+}
+
+// ✅ Determine user type based on available data
+function determineUserType(): string {
+    if (!props.user.user_detail) return 'Unknown';
+
+    const detail = props.user.user_detail;
+
+    // First check if we have a user_type from the backend
+    if (detail.user_type && detail.user_type !== 'Unknown') {
+        return detail.user_type;
+    }
+
+    // Otherwise determine based on data
+    if (detail.student_id) {
+        return 'Student';
+    } else if (detail.faculty_code || detail.department || detail.designation) {
+        return 'Faculty';
+    }
+
+    return 'Unknown';
 }
 
 // ✅ Get user type display
-function getUserTypeDisplay() {
-    if (!props.user.user_detail) return 'Unknown';
-    return props.user.user_detail.user_type;
+function getUserTypeDisplay(): string {
+    return determineUserType();
 }
 
 // ✅ Get user type icon
@@ -184,7 +217,7 @@ function getUserTypeIcon() {
 }
 
 // ✅ Get user type color
-function getUserTypeColor() {
+function getUserTypeColor(): string {
     const type = getUserTypeDisplay();
     if (type === 'Student') {
         return 'from-blue-500 to-cyan-500';
@@ -545,9 +578,7 @@ function getGuardClasses(guard: string) {
 
                                 <!-- Student Details -->
                                 <div
-                                    v-if="
-                                        user.user_detail.user_type === 'Student'
-                                    "
+                                    v-if="getUserTypeDisplay() === 'Student'"
                                     class="grid grid-cols-1 gap-4 sm:grid-cols-2"
                                 >
                                     <div class="flex items-center gap-3">
@@ -568,7 +599,9 @@ function getGuardClasses(guard: string) {
                                                 class="text-sm text-gray-600 dark:text-gray-400"
                                             >
                                                 {{
-                                                    user.user_detail.student_id
+                                                    user.user_detail
+                                                        .student_id ||
+                                                    'Not specified'
                                                 }}
                                             </p>
                                         </div>
@@ -591,11 +624,24 @@ function getGuardClasses(guard: string) {
                                             <p
                                                 class="text-sm text-gray-600 dark:text-gray-400"
                                             >
-                                                {{
-                                                    user.user_detail.program
-                                                        ?.name ||
-                                                    'Not specified'
-                                                }}
+                                                <span
+                                                    v-if="
+                                                        user.user_detail
+                                                            ?.program
+                                                    "
+                                                >
+                                                    {{
+                                                        user.user_detail.program
+                                                            .name
+                                                    }}
+                                                    ({{
+                                                        user.user_detail.program
+                                                            .code
+                                                    }})
+                                                </span>
+                                                <span v-else>
+                                                    Not specified
+                                                </span>
                                             </p>
                                         </div>
                                     </div>
@@ -643,8 +689,13 @@ function getGuardClasses(guard: string) {
                                                 class="text-sm text-gray-600 dark:text-gray-400"
                                             >
                                                 {{
-                                                    user.user_detail.intake ||
-                                                    'Not specified'
+                                                    user.user_detail.intake !==
+                                                        null &&
+                                                    user.user_detail.intake !==
+                                                        undefined
+                                                        ? user.user_detail
+                                                              .intake
+                                                        : 'Not specified'
                                                 }}
                                             </p>
                                         </div>
@@ -668,8 +719,13 @@ function getGuardClasses(guard: string) {
                                                 class="text-sm text-gray-600 dark:text-gray-400"
                                             >
                                                 {{
-                                                    user.user_detail.section ||
-                                                    'Not specified'
+                                                    user.user_detail.section !==
+                                                        null &&
+                                                    user.user_detail.section !==
+                                                        undefined
+                                                        ? user.user_detail
+                                                              .section
+                                                        : 'Not specified'
                                                 }}
                                             </p>
                                         </div>
@@ -693,7 +749,10 @@ function getGuardClasses(guard: string) {
                                                 class="text-sm text-gray-600 dark:text-gray-400"
                                             >
                                                 {{
-                                                    user.user_detail.cgpa
+                                                    user.user_detail.cgpa !==
+                                                        null &&
+                                                    user.user_detail.cgpa !==
+                                                        undefined
                                                         ? Number(
                                                               user.user_detail
                                                                   .cgpa,
@@ -708,7 +767,7 @@ function getGuardClasses(guard: string) {
                                 <!-- Faculty Details -->
                                 <div
                                     v-else-if="
-                                        user.user_detail.user_type === 'Faculty'
+                                        getUserTypeDisplay() === 'Faculty'
                                     "
                                     class="grid grid-cols-1 gap-4 sm:grid-cols-2"
                                 >
@@ -731,7 +790,8 @@ function getGuardClasses(guard: string) {
                                             >
                                                 {{
                                                     user.user_detail
-                                                        .faculty_code
+                                                        .faculty_code ||
+                                                    'Not specified'
                                                 }}
                                             </p>
                                         </div>
@@ -755,7 +815,9 @@ function getGuardClasses(guard: string) {
                                                 class="text-sm text-gray-600 dark:text-gray-400"
                                             >
                                                 {{
-                                                    user.user_detail.department
+                                                    user.user_detail
+                                                        .department ||
+                                                    'Not specified'
                                                 }}
                                             </p>
                                         </div>
@@ -779,14 +841,16 @@ function getGuardClasses(guard: string) {
                                                 class="text-sm text-gray-600 dark:text-gray-400"
                                             >
                                                 {{
-                                                    user.user_detail.designation
+                                                    user.user_detail
+                                                        .designation ||
+                                                    'Not specified'
                                                 }}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- No Details -->
+                                <!-- No Details or Unknown Type -->
                                 <div
                                     v-else
                                     class="py-4 text-center text-gray-500 dark:text-gray-400"

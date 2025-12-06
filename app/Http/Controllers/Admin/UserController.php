@@ -72,46 +72,64 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        // Load with nested relationships
         $user->load([
             'roles',
             'permissions',
-            'userDetail.program' // Load user detail with program
+            'userDetail' => function ($query) {
+                $query->with('program'); // Explicitly load program within userDetail
+            }
         ]);
 
-        // Get all roles and permissions for assignment
         $allRoles = Role::orderBy('name')->get();
         $allPermissions = Permission::orderBy('name')->get();
 
+        // Build user data
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'status' => $user->status,
+            'last_seen_at' => $user->last_seen_at?->toISOString(),
+            'created_at' => $user->created_at?->toISOString(),
+            'updated_at' => $user->updated_at?->toISOString(),
+            'roles' => $user->roles,
+            'permissions' => $user->permissions,
+        ];
+
+        // Build user detail data
+        if ($user->userDetail) {
+            $userDetailData = [
+                'phone' => $user->userDetail->phone,
+                'student_id' => $user->userDetail->student_id,
+                'faculty_code' => $user->userDetail->faculty_code,
+                'semester' => $user->userDetail->semester,
+                'intake' => $user->userDetail->intake,
+                'section' => $user->userDetail->section,
+                'cgpa' => $user->userDetail->cgpa,
+                'department' => $user->userDetail->department,
+                'designation' => $user->userDetail->designation,
+                'profile_picture' => $user->userDetail->profile_picture,
+                'user_type' => $user->userDetail->user_type,
+                'program' => null, // Initialize as null
+            ];
+
+            // Check if program is loaded and exists
+            if ($user->userDetail->program && $user->userDetail->program->exists) {
+                $userDetailData['program'] = [
+                    'id' => $user->userDetail->program->id,
+                    'name' => $user->userDetail->program->name,
+                    'code' => $user->userDetail->program->code,
+                ];
+            }
+
+            $userData['user_detail'] = $userDetailData;
+        } else {
+            $userData['user_detail'] = null;
+        }
+
         return Inertia::render('admin/Users/Show', [
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'status' => $user->status,
-                'last_seen_at' => $user->last_seen_at,
-                'created_at' => $user->created_at,
-                'updated_at' => $user->updated_at,
-                'roles' => $user->roles,
-                'permissions' => $user->permissions,
-                'user_detail' => $user->userDetail ? [
-                    'phone' => $user->userDetail->phone,
-                    'student_id' => $user->userDetail->student_id,
-                    'faculty_code' => $user->userDetail->faculty_code,
-                    'semester' => $user->userDetail->semester,
-                    'intake' => $user->userDetail->intake,
-                    'section' => $user->userDetail->section,
-                    'cgpa' => $user->userDetail->cgpa,
-                    'department' => $user->userDetail->department,
-                    'designation' => $user->userDetail->designation,
-                    'profile_picture' => $user->userDetail->profile_picture,
-                    'program' => $user->userDetail->program ? [
-                        'id' => $user->userDetail->program->id,
-                        'name' => $user->userDetail->program->name,
-                        'code' => $user->userDetail->program->code,
-                    ] : null,
-                    'user_type' => $user->userDetail->user_type,
-                ] : null,
-            ],
+            'user' => $userData,
             'allRoles' => $allRoles,
             'allPermissions' => $allPermissions,
         ]);

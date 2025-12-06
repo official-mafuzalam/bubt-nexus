@@ -12,13 +12,13 @@ class UserDetail extends Model
 
     protected $fillable = [
         'user_id',
-        'program_id', // Changed from 'program'
+        'program_id',
         'semester',
         'intake',
         'section',
         'student_id',
         'cgpa',
-        'department',//for faculty
+        'department',
         'faculty_code',
         'designation',
         'phone',
@@ -28,6 +28,8 @@ class UserDetail extends Model
     protected $casts = [
         'cgpa' => 'decimal:2',
     ];
+
+    protected $appends = ['user_type'];
 
     /**
      * Get the user that owns the details.
@@ -39,10 +41,11 @@ class UserDetail extends Model
 
     /**
      * Get the program associated with the user detail.
+     * Make sure this is correctly defined
      */
     public function program(): BelongsTo
     {
-        return $this->belongsTo(Program::class);
+        return $this->belongsTo(Program::class, 'program_id', 'id');
     }
 
     /**
@@ -73,13 +76,5 @@ class UserDetail extends Model
         }
 
         return 'Unknown';
-    }
-
-    /**
-     * Get program name (accessor for backward compatibility)
-     */
-    public function getProgramAttribute(): ?string
-    {
-        return $this->programRelation?->name;
     }
 }
