@@ -15,6 +15,7 @@ import { useAuth } from '@/composables/useAuth';
 import { dashboard } from '@/routes';
 import { index as apiIndex } from '@/routes/admin/api';
 import { index as notesIndex } from '@/routes/admin/notes';
+import { index as classroomIndex } from '@/routes/admin/classes';
 import permissions from '@/routes/admin/permissions';
 import roles from '@/routes/admin/roles';
 import { index as routineIndex } from '@/routes/admin/routines';
@@ -110,6 +111,11 @@ const mainNavItems = computed(() => {
             title: 'Routines',
             href: routineIndex(),
             icon: LayoutGrid,
+        });
+        items.push({
+            title: 'Class Rooms',
+            href: classroomIndex(),
+            icon: Building,
         });
     }
 
