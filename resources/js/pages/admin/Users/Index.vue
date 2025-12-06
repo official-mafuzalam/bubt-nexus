@@ -24,6 +24,7 @@ const props = defineProps<{
         status: 'active' | 'blocked';
         is_online: boolean;
         online_status: string;
+        user_type: string | null;
         last_seen_text: string;
         last_seen_detailed: {
             text: string;
@@ -163,6 +164,7 @@ function getStatusIcon(icon: string) {
                             <TableHead>ID</TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
+                            <TableHead>User Type</TableHead>
                             <TableHead>Account Status</TableHead>
                             <TableHead>Online Status</TableHead>
                             <TableHead>Last Activity</TableHead>
@@ -185,6 +187,10 @@ function getStatusIcon(icon: string) {
                                 </TableCell>
                                 <TableCell class="text-gray-600 dark:text-gray-400">
                                     {{ user.email }}
+                                </TableCell>
+                                <!-- User Type -->
+                                <TableCell class="text-gray-600 dark:text-gray-400">
+                                    {{ user.user_type ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1) : 'N/A' }}
                                 </TableCell>
                                 
                                 <!-- Account Status -->

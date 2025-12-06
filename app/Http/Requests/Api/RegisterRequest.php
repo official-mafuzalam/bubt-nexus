@@ -21,18 +21,13 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Simplified version - main validation is in controller
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            
-            // User details fields (optional during registration)
-            'student_id' => 'nullable|string|max:50|unique:user_details,student_id',
-            'faculty_id' => 'nullable|string|max:50|unique:user_details,faculty_id',
-            'program' => 'nullable|string|max:100',
-            'semester' => 'nullable|string|max:50',
-            'department' => 'nullable|string|max:100',
-            'phone' => 'nullable|string|max:20',
+            'user_type' => 'required|in:student,faculty',
+            'phone' => 'required|string|max:20',
         ];
     }
 
@@ -45,6 +40,9 @@ class RegisterRequest extends FormRequest
             'password.required' => 'The password field is required.',
             'password.min' => 'The password must be at least 8 characters.',
             'password.confirmed' => 'The password confirmation does not match.',
+            'user_type.required' => 'User type is required.',
+            'user_type.in' => 'User type must be either student or faculty.',
+            'phone.required' => 'Phone number is required.',
         ];
     }
 }

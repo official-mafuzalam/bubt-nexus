@@ -19,7 +19,7 @@ Route::get('/', [PublicHomeController::class, 'index'])->name('home');
 
 
 // Super Admin, Admin, User Dashboard Routes
-Route::middleware(['auth', 'verified', 'role:super_admin|admin|user'])->prefix('admin-dashboard')->group(function () {
+Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|student'])->prefix('admin-dashboard')->group(function () {
 
     Route::get('/', [HomeController::class, 'index'])->name('dashboard');
 

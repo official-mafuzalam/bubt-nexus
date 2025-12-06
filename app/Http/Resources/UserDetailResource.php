@@ -17,27 +17,27 @@ class UserDetailResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
+            'is_verified' => $this->is_verified,
 
             // Student fields
             'semester' => $this->semester,
             'intake' => $this->intake,
-            'program' => $this->program,
+            'section' => $this->section,
             'student_id' => $this->student_id,
             'cgpa' => $this->cgpa,
+            'program_id' => $this->program_id,
+            'program' => new ProgramResource($this->whenLoaded('program')),
 
             // Faculty fields
             'department' => $this->department,
-            'faculty_id' => $this->faculty_id,
+            'faculty_code' => $this->faculty_code,
             'designation' => $this->designation,
-            'office_room' => $this->office_room,
-            'office_hours' => $this->office_hours,
 
             // Common fields
             'phone' => $this->phone,
-            'address' => $this->address,
-            'date_of_birth' => $this->date_of_birth,
-            'emergency_contact' => $this->emergency_contact,
-            'profile_picture' => $this->profile_picture,
+            'profile_picture' => $this->profile_picture
+                ? asset('storage/' . $this->profile_picture)
+                : null,
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

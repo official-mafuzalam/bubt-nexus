@@ -12,25 +12,20 @@ class UserDetail extends Model
 
     protected $fillable = [
         'user_id',
+        'program_id', // Changed from 'program'
         'semester',
         'intake',
-        'program',
+        'section',
         'student_id',
         'cgpa',
-        'department',
-        'faculty_id',
+        'department',//for faculty
+        'faculty_code',
         'designation',
-        'office_room',
-        'office_hours',
         'phone',
-        'address',
-        'date_of_birth',
-        'emergency_contact',
         'profile_picture',
     ];
 
     protected $casts = [
-        'date_of_birth' => 'date',
         'cgpa' => 'decimal:2',
     ];
 
@@ -40,6 +35,14 @@ class UserDetail extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the program associated with the user detail.
+     */
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class);
     }
 
     /**
@@ -55,7 +58,7 @@ class UserDetail extends Model
      */
     public function scopeFaculty($query)
     {
-        return $query->whereNotNull('faculty_id');
+        return $query->whereNotNull('faculty_code');
     }
 
     /**
@@ -65,10 +68,18 @@ class UserDetail extends Model
     {
         if ($this->student_id) {
             return 'Student';
-        } elseif ($this->faculty_id) {
+        } elseif ($this->faculty_code) {
             return 'Faculty';
         }
 
         return 'Unknown';
+    }
+
+    /**
+     * Get program name (accessor for backward compatibility)
+     */
+    public function getProgramAttribute(): ?string
+    {
+        return $this->programRelation?->name;
     }
 }

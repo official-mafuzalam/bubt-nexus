@@ -33,7 +33,8 @@ class User extends Authenticatable
     protected $appends = [
         'user_type',
         'is_student',
-        'is_faculty'
+        'is_faculty',
+        'program'  // Added to access program through user detail
     ];
 
     protected function casts(): array
@@ -66,7 +67,8 @@ class User extends Authenticatable
      */
     public function getIsFacultyAttribute(): bool
     {
-        return $this->userDetail && $this->userDetail->faculty_id !== null;
+        // Fixed: Changed from faculty_id to faculty_code
+        return $this->userDetail && $this->userDetail->faculty_code !== null;
     }
 
     /**
@@ -80,11 +82,65 @@ class User extends Authenticatable
 
         if ($this->userDetail->student_id) {
             return 'Student';
-        } elseif ($this->userDetail->faculty_id) {
+        } elseif ($this->userDetail->faculty_code) { // Fixed: Changed from faculty_id to faculty_code
             return 'Faculty';
         }
 
         return 'Unknown';
+    }
+
+    /**
+     * Get program through user details
+     */
+    public function getProgramAttribute()
+    {
+        return $this->userDetail?->program;
+    }
+
+    /**
+     * Get program name (convenience method)
+     */
+    public function getProgramNameAttribute(): ?string
+    {
+        return $this->userDetail?->program?->name;
+    }
+
+    /**
+     * Get program code (convenience method)
+     */
+    public function getProgramCodeAttribute(): ?string
+    {
+        return $this->userDetail?->program?->code;
+    }
+
+    /**
+     * Scope for students
+     */
+    public function scopeStudents($query)
+    {
+        return $query->whereHas('userDetail', function ($q) {
+            $q->whereNotNull('student_id');
+        });
+    }
+
+    /**
+     * Scope for faculty
+     */
+    public function scopeFaculty($query)
+    {
+        return $query->whereHas('userDetail', function ($q) {
+            $q->whereNotNull('faculty_code'); // Fixed: Changed from faculty_id to faculty_code
+        });
+    }
+
+    /**
+     * Scope for users in a specific program
+     */
+    public function scopeInProgram($query, $programId)
+    {
+        return $query->whereHas('userDetail', function ($q) use ($programId) {
+            $q->where('program_id', $programId);
+        });
     }
 
     /**

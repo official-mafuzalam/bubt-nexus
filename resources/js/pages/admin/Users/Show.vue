@@ -21,28 +21,33 @@ import { Head, Link, router, useForm } from '@inertiajs/vue3';
 
 // ✅ Import your route helpers
 import { destroy, edit, index, status } from '@/routes/admin/users';
-import { assign, remove } from '@/routes/admin/users/roles';
 import { give, revoke } from '@/routes/admin/users/permissions';
+import { assign, remove } from '@/routes/admin/users/roles';
 
 import {
     Activity,
     ArrowLeft,
+    Award,
     Ban,
+    Book,
+    Briefcase,
+    Building,
     Calendar,
+    CalendarDays,
     CheckCircle,
     Clock,
     Edit,
-    Key,
+    GraduationCap,
+    Hash,
     Mail,
-    Plus,
-    Shield,
+    Phone,
+    School,
     ShieldCheck,
-    ShieldOff,
     Trash2,
     User,
-    UserCog,
-    Users,
-    X,
+    UserCheck,
+    Users as UsersIcon,
+    UserX,
 } from 'lucide-vue-next';
 
 // ✅ Receive user data from Laravel
@@ -65,6 +70,24 @@ const props = defineProps<{
             name: string;
             guard_name: string;
         }>;
+        user_detail: {
+            phone?: string;
+            student_id?: string;
+            faculty_code?: string;
+            semester?: string;
+            intake?: number;
+            section?: number;
+            cgpa?: number;
+            department?: string;
+            designation?: string;
+            profile_picture?: string;
+            program?: {
+                id: number;
+                name: string;
+                code: string;
+            };
+            user_type: 'Student' | 'Faculty' | 'Unknown';
+        } | null;
     };
     allRoles: Array<{
         id: number;
@@ -142,6 +165,29 @@ function isRecentlyActive() {
     return diffInMinutes < 5;
 }
 
+// ✅ Get user type display
+function getUserTypeDisplay() {
+    if (!props.user.user_detail) return 'Unknown';
+    return props.user.user_detail.user_type;
+}
+
+// ✅ Get user type icon
+function getUserTypeIcon() {
+    const type = getUserTypeDisplay();
+    return type === 'Student' ? GraduationCap : Briefcase;
+}
+
+// ✅ Get user type color
+function getUserTypeColor() {
+    const type = getUserTypeDisplay();
+    if (type === 'Student') {
+        return 'from-blue-500 to-cyan-500';
+    } else if (type === 'Faculty') {
+        return 'from-purple-500 to-pink-500';
+    }
+    return 'from-gray-500 to-gray-600';
+}
+
 // ✅ Block/Unblock user function
 function toggleUserStatus() {
     const action = props.user.status === 'active' ? 'block' : 'unblock';
@@ -207,17 +253,10 @@ function assignRole() {
 
 // ✅ Function to remove role
 function removeRole(roleId: number) {
-    if (
-        confirm(
-            'Are you sure you want to remove this role from the user?',
-        )
-    ) {
-        router.delete(
-            remove({ user: props.user.id, role: roleId }),
-            {
-                preserveScroll: true,
-            },
-        );
+    if (confirm('Are you sure you want to remove this role from the user?')) {
+        router.delete(remove({ user: props.user.id, role: roleId }), {
+            preserveScroll: true,
+        });
     }
 }
 
@@ -237,12 +276,9 @@ function assignPermission() {
 function revokePermission(permissionId: number) {
     if (!confirm('Are you sure you want to revoke this permission?')) return;
 
-    router.delete(
-        revoke({ user: props.user.id, permission: permissionId }),
-        {
-            preserveScroll: true,
-        },
-    );
+    router.delete(revoke({ user: props.user.id, permission: permissionId }), {
+        preserveScroll: true,
+    });
 }
 
 // ✅ Guard name badge classes
@@ -317,9 +353,15 @@ function getGuardClasses(guard: string) {
                             <div class="flex items-start justify-between">
                                 <div class="flex items-center gap-4">
                                     <div
-                                        class="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-500"
+                                        :class="[
+                                            'flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br',
+                                            getUserTypeColor(),
+                                        ]"
                                     >
-                                        <User class="h-8 w-8 text-white" />
+                                        <component
+                                            :is="getUserTypeIcon()"
+                                            class="h-8 w-8 text-white"
+                                        />
                                     </div>
                                     <div>
                                         <h2
@@ -327,11 +369,27 @@ function getGuardClasses(guard: string) {
                                         >
                                             {{ user.name }}
                                         </h2>
-                                        <p
-                                            class="text-gray-600 dark:text-gray-400"
+                                        <div
+                                            class="mt-1 flex items-center gap-2"
                                         >
-                                            User ID: #{{ user.id }}
-                                        </p>
+                                            <p
+                                                class="text-gray-600 dark:text-gray-400"
+                                            >
+                                                User ID: #{{ user.id }}
+                                            </p>
+                                            <span
+                                                class="h-1 w-1 rounded-full bg-gray-400"
+                                            ></span>
+                                            <span
+                                                class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                                            >
+                                                <component
+                                                    :is="getUserTypeIcon()"
+                                                    class="h-3 w-3"
+                                                />
+                                                {{ getUserTypeDisplay() }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="text-right">
@@ -363,7 +421,9 @@ function getGuardClasses(guard: string) {
                                 </div>
                             </div>
 
+                            <!-- User Details Grid -->
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <!-- Basic Info -->
                                 <div class="flex items-center gap-3">
                                     <div
                                         class="rounded-lg bg-blue-50 p-2 dark:bg-blue-900/20"
@@ -390,8 +450,33 @@ function getGuardClasses(guard: string) {
                                     <div
                                         class="rounded-lg bg-green-50 p-2 dark:bg-green-900/20"
                                     >
-                                        <Calendar
+                                        <Phone
                                             class="h-5 w-5 text-green-600 dark:text-green-400"
+                                        />
+                                    </div>
+                                    <div>
+                                        <p
+                                            class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                        >
+                                            Phone
+                                        </p>
+                                        <p
+                                            class="text-sm text-gray-600 dark:text-gray-400"
+                                        >
+                                            {{
+                                                user.user_detail?.phone ||
+                                                'Not provided'
+                                            }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="rounded-lg bg-purple-50 p-2 dark:bg-purple-900/20"
+                                    >
+                                        <Calendar
+                                            class="h-5 w-5 text-purple-600 dark:text-purple-400"
                                         />
                                     </div>
                                     <div>
@@ -410,10 +495,10 @@ function getGuardClasses(guard: string) {
 
                                 <div class="flex items-center gap-3">
                                     <div
-                                        class="rounded-lg bg-purple-50 p-2 dark:bg-purple-900/20"
+                                        class="rounded-lg bg-amber-50 p-2 dark:bg-amber-900/20"
                                     >
                                         <Clock
-                                            class="h-5 w-5 text-purple-600 dark:text-purple-400"
+                                            class="h-5 w-5 text-amber-600 dark:text-amber-400"
                                         />
                                     </div>
                                     <div>
@@ -435,27 +520,277 @@ function getGuardClasses(guard: string) {
                                         </p>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="flex items-center gap-3">
-                                    <div
-                                        class="rounded-lg bg-amber-50 p-2 dark:bg-amber-900/20"
-                                    >
-                                        <Shield
-                                            class="h-5 w-5 text-amber-600 dark:text-amber-400"
-                                        />
-                                    </div>
-                                    <div>
-                                        <p
-                                            class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                            <!-- Student/Faculty Specific Details -->
+                            <div
+                                v-if="user.user_detail"
+                                class="mt-6 rounded-lg border bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50"
+                            >
+                                <h3
+                                    class="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100"
+                                >
+                                    <component
+                                        :is="getUserTypeIcon()"
+                                        class="h-5 w-5"
+                                    />
+                                    {{ getUserTypeDisplay() }} Details
+                                </h3>
+
+                                <!-- Student Details -->
+                                <div
+                                    v-if="
+                                        user.user_detail.user_type === 'Student'
+                                    "
+                                    class="grid grid-cols-1 gap-4 sm:grid-cols-2"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-blue-50 p-2 dark:bg-blue-900/20"
                                         >
-                                            Account Status
-                                        </p>
-                                        <p
-                                            class="text-sm text-gray-600 capitalize dark:text-gray-400"
-                                        >
-                                            {{ user.status }}
-                                        </p>
+                                            <Hash
+                                                class="h-5 w-5 text-blue-600 dark:text-blue-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                Student ID
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail.student_id
+                                                }}
+                                            </p>
+                                        </div>
                                     </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-indigo-50 p-2 dark:bg-indigo-900/20"
+                                        >
+                                            <Book
+                                                class="h-5 w-5 text-indigo-600 dark:text-indigo-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                Program
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail.program
+                                                        ?.name ||
+                                                    'Not specified'
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-emerald-50 p-2 dark:bg-emerald-900/20"
+                                        >
+                                            <School
+                                                class="h-5 w-5 text-emerald-600 dark:text-emerald-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                Semester
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail.semester ||
+                                                    'Not specified'
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-cyan-50 p-2 dark:bg-cyan-900/20"
+                                        >
+                                            <CalendarDays
+                                                class="h-5 w-5 text-cyan-600 dark:text-cyan-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                Intake
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail.intake ||
+                                                    'Not specified'
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-rose-50 p-2 dark:bg-rose-900/20"
+                                        >
+                                            <UsersIcon
+                                                class="h-5 w-5 text-rose-600 dark:text-rose-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                Section
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail.section ||
+                                                    'Not specified'
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-violet-50 p-2 dark:bg-violet-900/20"
+                                        >
+                                            <Award
+                                                class="h-5 w-5 text-violet-600 dark:text-violet-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                CGPA
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail.cgpa
+                                                        ? user.user_detail.cgpa.toFixed(
+                                                              2,
+                                                          )
+                                                        : 'Not specified'
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Faculty Details -->
+                                <div
+                                    v-else-if="
+                                        user.user_detail.user_type === 'Faculty'
+                                    "
+                                    class="grid grid-cols-1 gap-4 sm:grid-cols-2"
+                                >
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-purple-50 p-2 dark:bg-purple-900/20"
+                                        >
+                                            <Hash
+                                                class="h-5 w-5 text-purple-600 dark:text-purple-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                Faculty Code
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail
+                                                        .faculty_code
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-pink-50 p-2 dark:bg-pink-900/20"
+                                        >
+                                            <Building
+                                                class="h-5 w-5 text-pink-600 dark:text-pink-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                Department
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail.department
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="rounded-lg bg-amber-50 p-2 dark:bg-amber-900/20"
+                                        >
+                                            <Briefcase
+                                                class="h-5 w-5 text-amber-600 dark:text-amber-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <p
+                                                class="text-sm font-medium text-gray-900 dark:text-gray-100"
+                                            >
+                                                Designation
+                                            </p>
+                                            <p
+                                                class="text-sm text-gray-600 dark:text-gray-400"
+                                            >
+                                                {{
+                                                    user.user_detail.designation
+                                                }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- No Details -->
+                                <div
+                                    v-else
+                                    class="py-4 text-center text-gray-500 dark:text-gray-400"
+                                >
+                                    <UserX
+                                        class="mx-auto mb-2 h-8 w-8 opacity-50"
+                                    />
+                                    <p class="text-sm">
+                                        No additional details available for this
+                                        user.
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>
@@ -817,6 +1152,63 @@ function getGuardClasses(guard: string) {
 
                 <!-- Right Column - Actions & Details -->
                 <div class="space-y-6">
+                    <!-- User Type Badge -->
+                    <Card>
+                        <CardHeader>
+                            <CardTitle class="flex items-center gap-2">
+                                <UserCheck class="h-5 w-5" />
+                                User Type
+                            </CardTitle>
+                            <CardDescription>
+                                Type of user account
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div
+                                class="flex flex-col items-center justify-center p-4"
+                            >
+                                <div
+                                    :class="[
+                                        'mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br',
+                                        getUserTypeColor(),
+                                    ]"
+                                >
+                                    <component
+                                        :is="getUserTypeIcon()"
+                                        class="h-10 w-10 text-white"
+                                    />
+                                </div>
+                                <h3
+                                    class="text-xl font-bold text-gray-900 dark:text-gray-100"
+                                >
+                                    {{ getUserTypeDisplay() }}
+                                </h3>
+                                <p
+                                    class="mt-2 text-center text-sm text-gray-600 dark:text-gray-400"
+                                >
+                                    <template
+                                        v-if="
+                                            getUserTypeDisplay() === 'Student'
+                                        "
+                                    >
+                                        Student account with academic details
+                                    </template>
+                                    <template
+                                        v-else-if="
+                                            getUserTypeDisplay() === 'Faculty'
+                                        "
+                                    >
+                                        Faculty account with professional
+                                        details
+                                    </template>
+                                    <template v-else>
+                                        Basic user account
+                                    </template>
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <!-- Quick Actions -->
                     <Card>
                         <CardHeader>
@@ -930,6 +1322,17 @@ function getGuardClasses(guard: string) {
                                               ) + ' days'
                                             : 'N/A'
                                     }}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span
+                                    class="text-sm text-gray-600 dark:text-gray-400"
+                                    >User Type</span
+                                >
+                                <span
+                                    class="text-sm text-gray-900 dark:text-gray-100"
+                                >
+                                    {{ getUserTypeDisplay() }}
                                 </span>
                             </div>
                             <div class="flex items-center justify-between">

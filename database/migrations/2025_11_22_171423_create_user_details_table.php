@@ -11,25 +11,23 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
 
+            // Change program field to foreign key
+            $table->foreignId('program_id')->nullable()->constrained()->onDelete('set null');
+
             // University student fields
             $table->string('semester')->nullable();
-            $table->string('intake')->nullable();
-            $table->string('program')->nullable();
+            $table->integer('intake')->nullable();
+            $table->integer('section')->nullable();
             $table->string('student_id')->nullable()->unique();
             $table->decimal('cgpa', 3, 2)->nullable();
 
             // Faculty fields
             $table->string('department')->nullable();
-            $table->string('faculty_id')->nullable()->unique();
+            $table->string('faculty_code')->nullable()->unique();
             $table->string('designation')->nullable();
-            $table->string('office_room')->nullable();
-            $table->string('office_hours')->nullable();
 
             // Common fields
             $table->string('phone')->nullable();
-            $table->text('address')->nullable();
-            $table->date('date_of_birth')->nullable();
-            $table->string('emergency_contact')->nullable();
             $table->string('profile_picture')->nullable();
 
             $table->timestamps();
@@ -37,7 +35,8 @@ return new class extends Migration {
             // Indexes
             $table->index(['user_id']);
             $table->index(['student_id']);
-            $table->index(['faculty_id']);
+            $table->index(['faculty_code']);
+            $table->index(['program_id']);
         });
     }
 

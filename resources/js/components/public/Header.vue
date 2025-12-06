@@ -18,43 +18,43 @@ const { setting } = useSettings();
 const appName = setting('site_name', import.meta.env.VITE_APP_NAME || 'My App');
 const page = usePage();
 
-const components: { title: string; href: string; description: string }[] = [
-    {
-        title: 'Alert Dialog',
-        href: '/docs/components/alert-dialog',
-        description:
-            'A modal dialog that interrupts the user with important content and expects a response.',
-    },
-    {
-        title: 'Hover Card',
-        href: '/docs/components/hover-card',
-        description:
-            'For sighted users to preview content available behind a link.',
-    },
-    {
-        title: 'Progress',
-        href: '/docs/components/progress',
-        description:
-            'Displays an indicator showing the completion progress of a task.',
-    },
-    {
-        title: 'Scroll-area',
-        href: '/docs/components/scroll-area',
-        description: 'Visually or semantically separates content.',
-    },
-    {
-        title: 'Tabs',
-        href: '/docs/components/tabs',
-        description:
-            'A set of layered sections of content displayed one at a time.',
-    },
-    {
-        title: 'Tooltip',
-        href: '/docs/components/tooltip',
-        description:
-            'A popup that displays information related to an element when hovered.',
-    },
-];
+// const components: { title: string; href: string; description: string }[] = [
+//     {
+//         title: 'Alert Dialog',
+//         href: '/docs/components/alert-dialog',
+//         description:
+//             'A modal dialog that interrupts the user with important content and expects a response.',
+//     },
+//     {
+//         title: 'Hover Card',
+//         href: '/docs/components/hover-card',
+//         description:
+//             'For sighted users to preview content available behind a link.',
+//     },
+//     {
+//         title: 'Progress',
+//         href: '/docs/components/progress',
+//         description:
+//             'Displays an indicator showing the completion progress of a task.',
+//     },
+//     {
+//         title: 'Scroll-area',
+//         href: '/docs/components/scroll-area',
+//         description: 'Visually or semantically separates content.',
+//     },
+//     {
+//         title: 'Tabs',
+//         href: '/docs/components/tabs',
+//         description:
+//             'A set of layered sections of content displayed one at a time.',
+//     },
+//     {
+//         title: 'Tooltip',
+//         href: '/docs/components/tooltip',
+//         description:
+//             'A popup that displays information related to an element when hovered.',
+//     },
+// ];
 
 // route helpers
 const dashboard = () => '/admin-dashboard';
@@ -84,7 +84,7 @@ const register = () => '/register';
             <NavigationMenu>
                 <NavigationMenuList>
                     <!-- Centered Dropdown Menu -->
-                    <NavigationMenuItem class="relative">
+                    <!-- <NavigationMenuItem class="relative">
                         <NavigationMenuTrigger
                             class="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                             >Components</NavigationMenuTrigger
@@ -115,9 +115,9 @@ const register = () => '/register';
                                 </li>
                             </ul>
                         </NavigationMenuContent>
-                    </NavigationMenuItem>
+                    </NavigationMenuItem> -->
 
-                    <NavigationMenuItem className="hidden md:block">
+                    <!-- <NavigationMenuItem className="hidden md:block">
                         <NavigationMenuTrigger
                             class="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                             >Simple</NavigationMenuTrigger
@@ -137,9 +137,9 @@ const register = () => '/register';
                                 </li>
                             </ul>
                         </NavigationMenuContent>
-                    </NavigationMenuItem>
+                    </NavigationMenuItem> -->
 
-                    <NavigationMenuItem
+                    <!-- <NavigationMenuItem
                         class="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
                         <NavigationMenuLink
@@ -148,7 +148,7 @@ const register = () => '/register';
                         >
                             Documentation
                         </NavigationMenuLink>
-                    </NavigationMenuItem>
+                    </NavigationMenuItem> -->
 
                     <!-- Auth buttons -->
                     <Link

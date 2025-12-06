@@ -31,6 +31,7 @@ class UserController extends Controller
                 'last_seen_at' => $user->last_seen_at,
                 'last_seen_text' => $user->getLastSeenText(),
                 'last_seen_detailed' => $lastSeenDetailed,
+                'user_type' => $user->userDetail ? $user->userDetail->user_type : null,
                 'created_at' => $user->created_at,
                 'updated_at' => $user->updated_at,
             ];
@@ -71,7 +72,11 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $user->load(['roles', 'permissions']);
+        $user->load([
+            'roles',
+            'permissions',
+            'userDetail.program' // Load user detail with program
+        ]);
 
         // Get all roles and permissions for assignment
         $allRoles = Role::orderBy('name')->get();
@@ -88,6 +93,24 @@ class UserController extends Controller
                 'updated_at' => $user->updated_at,
                 'roles' => $user->roles,
                 'permissions' => $user->permissions,
+                'user_detail' => $user->userDetail ? [
+                    'phone' => $user->userDetail->phone,
+                    'student_id' => $user->userDetail->student_id,
+                    'faculty_code' => $user->userDetail->faculty_code,
+                    'semester' => $user->userDetail->semester,
+                    'intake' => $user->userDetail->intake,
+                    'section' => $user->userDetail->section,
+                    'cgpa' => $user->userDetail->cgpa,
+                    'department' => $user->userDetail->department,
+                    'designation' => $user->userDetail->designation,
+                    'profile_picture' => $user->userDetail->profile_picture,
+                    'program' => $user->userDetail->program ? [
+                        'id' => $user->userDetail->program->id,
+                        'name' => $user->userDetail->program->name,
+                        'code' => $user->userDetail->program->code,
+                    ] : null,
+                    'user_type' => $user->userDetail->user_type,
+                ] : null,
             ],
             'allRoles' => $allRoles,
             'allPermissions' => $allPermissions,
