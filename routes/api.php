@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\HomeController;
+use App\Http\Controllers\Api\RentController;
+use App\Http\Controllers\Api\RentImageController;
 use App\Http\Controllers\Api\RideController;
 use App\Http\Controllers\Api\RoutineController;
 use App\Http\Controllers\Api\UserController;
@@ -17,8 +19,20 @@ Route::get('/designations', [AuthController::class, 'getDesignationOptions']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Rent routes
+    Route::get('/rents', [RentController::class, 'index']);
+    Route::get('/rents/{id}', [RentController::class, 'show']);
+    Route::get('/rents/search', [RentController::class, 'search']);
+
+    Route::post('/rents', [RentController::class, 'store']);
+    Route::put('/rents/{id}', [RentController::class, 'update']);
+    Route::delete('/rents/{id}', [RentController::class, 'destroy']);
+    Route::put('/rents/{id}/availability', [RentController::class, 'setAvailability']);
+    Route::get('/my-rents', [RentController::class, 'myRents']);
 
     // Ride routes
     Route::prefix('rides')->group(function () {
@@ -40,10 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/register', [DeviceController::class, 'registerDevice']);
         Route::delete('/unregister/{token}', [DeviceController::class, 'unregisterDevice']);
     });
-
-
-
-
 
     // User routes
     Route::get('/users', [UserController::class, 'index']);
