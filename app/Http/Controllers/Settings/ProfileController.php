@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
+use App\Http\Class\Data;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -16,28 +17,58 @@ class ProfileController extends Controller
     /**
      * Show the user's profile settings page.
      */
+
     public function edit(Request $request): Response
     {
+        $user = $request->user()->load('userDetail.program');
+
         return Inertia::render('settings/Profile', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
+            'user' => $user,
+            'isFaculty' => $user->hasRole('faculty'),
+            'isStudent' => $user->hasRole('student'),
+
+            // pass select options
+            'semesterOptions' => Data::getSemesterOptions(),
+            'departmentOptions' => Data::getDepartmentOptions(),
+            'designationOptions' => Data::getDesignationOptions(),
         ]);
     }
+
 
     /**
      * Update the user's profile information.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
 
-        return to_route('profile.edit');
+        // Update related user_detail fields
+        $userDetailData = $request->only([
+            'phone',
+            'program_id',
+            'semester',
+            'intake',
+            'section',
+            'student_id',
+            'cgpa',
+            'department',
+            'faculty_code',
+            'designation',
+        ]);
+
+        // Make sure userDetail exists
+        $user->userDetail()->updateOrCreate([], $userDetailData);
+
+        return to_route('profile.edit')->with('status', 'Profile updated successfully!');
     }
 
     /**

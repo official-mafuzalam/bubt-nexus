@@ -133,6 +133,7 @@
 import { useForm } from '@inertiajs/vue3';
 import { AlertCircle, AlertTriangle, Paperclip, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { route } from 'ziggy-js';
 
 const props = defineProps<{
     assignment: {
@@ -213,7 +214,7 @@ const submit = () => {
     });
 
     form.post(
-        route('submissions.submit', [props.classId, props.assignment.id]),
+        route('admin.submissions.submit', [props.classId, props.assignment.id]),
         {
             preserveScroll: true,
             onSuccess: () => {

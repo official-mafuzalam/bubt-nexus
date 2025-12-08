@@ -1,35 +1,45 @@
 <script setup lang="ts">
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import { edit } from '@/routes/profile';
-import { send } from '@/routes/verification';
-import { Form, Head, Link, usePage } from '@inertiajs/vue3';
-
 import DeleteUser from '@/components/DeleteUser.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { type BreadcrumbItem } from '@/types';
+import { Form, Head, usePage } from '@inertiajs/vue3';
 
 interface Props {
     mustVerifyEmail: boolean;
     status?: string;
+    isFaculty: boolean;
+    isStudent: boolean;
 }
 
-defineProps<Props>();
-
-const breadcrumbItems: BreadcrumbItem[] = [
-    {
-        title: 'Profile settings',
-        href: edit().url,
-    },
-];
+const props = defineProps<Props>();
 
 const page = usePage();
-const user = page.props.auth.user;
+const user = page.props.user;
+
+const isFaculty = props.isFaculty;
+const isStudent = props.isStudent;
+const semesterOptions = page.props.semesterOptions;
+const departmentOptions = page.props.departmentOptions;
+const designationOptions = page.props.designationOptions;
+
+// Breadcrumb
+const breadcrumbItems: BreadcrumbItem[] = [
+    { title: 'Profile settings', href: '/settings/profile' },
+];
 </script>
 
 <template>
@@ -40,7 +50,7 @@ const user = page.props.auth.user;
             <div class="flex flex-col space-y-6">
                 <HeadingSmall
                     title="Profile information"
-                    description="Update your name and email address"
+                    description="Update your information"
                 />
 
                 <Form
@@ -48,18 +58,17 @@ const user = page.props.auth.user;
                     class="space-y-6"
                     v-slot="{ errors, processing, recentlySuccessful }"
                 >
+                    <!-- Common fields -->
                     <div class="grid gap-2">
                         <Label for="name">Name</Label>
                         <Input
                             id="name"
-                            class="mt-1 block w-full"
                             name="name"
                             :default-value="user.name"
                             required
-                            autocomplete="name"
                             placeholder="Full name"
                         />
-                        <InputError class="mt-2" :message="errors.name" />
+                        <InputError :message="errors.name" />
                     </div>
 
                     <div class="grid gap-2">
@@ -67,57 +76,154 @@ const user = page.props.auth.user;
                         <Input
                             id="email"
                             type="email"
-                            class="mt-1 block w-full"
                             name="email"
                             :default-value="user.email"
                             required
-                            autocomplete="username"
-                            placeholder="Email address"
+                            placeholder="Email"
                         />
-                        <InputError class="mt-2" :message="errors.email" />
+                        <InputError :message="errors.email" />
                     </div>
 
-                    <div v-if="mustVerifyEmail && !user.email_verified_at">
-                        <p class="-mt-4 text-sm text-muted-foreground">
-                            Your email address is unverified.
-                            <Link
-                                :href="send()"
-                                as="button"
-                                class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                    <div class="grid gap-2">
+                        <Label for="phone">Phone</Label>
+                        <Input
+                            id="phone"
+                            name="phone"
+                            :default-value="user.user_detail?.phone"
+                            placeholder="Phone number"
+                        />
+                        <InputError :message="errors.phone" />
+                    </div>
+
+                    <!-- Student-specific fields -->
+                    <template v-if="isStudent">
+                        <div class="grid gap-2">
+                            <Label for="semester">Semester</Label>
+                            <Select
+                                name="semester"
+                                :default-value="user.user_detail?.semester"
                             >
-                                Click here to resend the verification email.
-                            </Link>
-                        </p>
-
-                        <div
-                            v-if="status === 'verification-link-sent'"
-                            class="mt-2 text-sm font-medium text-green-600"
-                        >
-                            A new verification link has been sent to your email
-                            address.
+                                <SelectTrigger>
+                                    <SelectValue
+                                        placeholder="Select Semester"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="(id, name) in semesterOptions"
+                                        :key="id"
+                                        :value="name"
+                                    >
+                                        {{ name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError :message="errors.semester" />
                         </div>
-                    </div>
+
+                        <div class="grid gap-2">
+                            <Label for="intake">Intake</Label>
+                            <Input
+                                id="intake"
+                                name="intake"
+                                type="number"
+                                :default-value="user.user_detail?.intake"
+                            />
+                            <InputError :message="errors.intake" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="section">Section</Label>
+                            <Input
+                                id="section"
+                                name="section"
+                                :default-value="user.user_detail?.section"
+                            />
+                            <InputError :message="errors.section" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="cgpa">CGPA</Label>
+                            <Input
+                                id="cgpa"
+                                name="cgpa"
+                                type="number"
+                                step="0.01"
+                                :default-value="user.user_detail?.cgpa"
+                            />
+                            <InputError :message="errors.cgpa" />
+                        </div>
+                    </template>
+
+                    <!-- Faculty-specific fields -->
+                    <template v-if="isFaculty">
+                        <div class="grid gap-2">
+                            <Label for="department">Department</Label>
+                            <Select
+                                name="department"
+                                :default-value="user.user_detail?.department"
+                            >
+                                <SelectTrigger>
+                                    <SelectValue
+                                        placeholder="Select Department"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="dept in departmentOptions"
+                                        :key="dept"
+                                        :value="dept"
+                                    >
+                                        {{ dept }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError :message="errors.department" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="designation">Designation</Label>
+                            <Select
+                                name="designation"
+                                :default-value="user.user_detail?.designation"
+                            >
+                                <SelectTrigger>
+                                    <SelectValue
+                                        placeholder="Select Designation"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="des in designationOptions"
+                                        :key="des"
+                                        :value="des"
+                                    >
+                                        {{ des }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError :message="errors.designation" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="faculty_code">Faculty Code</Label>
+                            <Input
+                                id="faculty_code"
+                                name="faculty_code"
+                                :default-value="user.user_detail?.faculty_code"
+                            />
+                            <InputError :message="errors.faculty_code" />
+                        </div>
+                    </template>
 
                     <div class="flex items-center gap-4">
-                        <Button
-                            :disabled="processing"
-                            data-test="update-profile-button"
-                            >Save</Button
+                        <Button :disabled="processing">Save</Button>
+                        <p
+                            v-show="recentlySuccessful"
+                            class="text-sm text-neutral-600"
                         >
-
-                        <Transition
-                            enter-active-class="transition ease-in-out"
-                            enter-from-class="opacity-0"
-                            leave-active-class="transition ease-in-out"
-                            leave-to-class="opacity-0"
-                        >
-                            <p
-                                v-show="recentlySuccessful"
-                                class="text-sm text-neutral-600"
-                            >
-                                Saved.
-                            </p>
-                        </Transition>
+                            Saved.
+                        </p>
                     </div>
                 </Form>
             </div>

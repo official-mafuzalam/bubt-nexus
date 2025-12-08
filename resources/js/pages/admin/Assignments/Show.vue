@@ -1,4 +1,236 @@
-<!-- resources/js/pages/Assignments/Show.vue -->
+<script setup lang="ts">
+import SubmissionForm from '@/components/assignments/SubmissionForm.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Link, router } from '@inertiajs/vue3';
+import { ArrowLeft, User } from 'lucide-vue-next';
+import { computed } from 'vue';
+
+// Import your Wayfinder route definitions
+import { route } from 'ziggy-js';
+
+const props = defineProps<{
+    class?: any; // Could be string or object
+    assignment?: any;
+    isFaculty?: boolean;
+    submission?: any;
+    allSubmissions?: any; // Could be paginator object or array
+}>();
+
+// Extract IDs from URL as fallback
+const extractClassIdFromUrl = (): number => {
+    try {
+        const url = window.location.pathname;
+        const match = url.match(/\/classes\/(\d+)\/assignments\/\d+/);
+        return match ? parseInt(match[1]) : 0;
+    } catch (error) {
+        console.error('Error extracting class ID from URL:', error);
+        return 0;
+    }
+};
+
+const extractAssignmentIdFromUrl = (): number => {
+    try {
+        const url = window.location.pathname;
+        const match = url.match(/\/classes\/\d+\/assignments\/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+    } catch (error) {
+        console.error('Error extracting assignment ID from URL:', error);
+        return 0;
+    }
+};
+
+const extractedClassId = computed(() => extractClassIdFromUrl());
+const extractedAssignmentId = computed(() => extractAssignmentIdFromUrl());
+
+// Safe computed properties
+const safeAssignment = computed(() => {
+    if (props.assignment && typeof props.assignment === 'object') {
+        return {
+            id: props.assignment.id || extractedAssignmentId.value,
+            title: props.assignment.title || 'Untitled Assignment',
+            description: props.assignment.description || '',
+            instructions: props.assignment.instructions || '',
+            total_marks: props.assignment.total_marks || 0,
+            deadline: props.assignment.deadline || '',
+            status: props.assignment.status || 'draft',
+            attachments: props.assignment.attachments || [],
+            submissions_count: props.assignment.submissions_count || 0,
+        };
+    }
+    return {
+        id: extractedAssignmentId.value,
+        title: 'Assignment',
+        description: '',
+        total_marks: 0,
+        deadline: '',
+        status: 'draft',
+        attachments: [],
+        submissions_count: 0,
+    };
+});
+
+const isFaculty = computed(() => props.isFaculty || false);
+
+const submission = computed(() => {
+    if (props.submission && typeof props.submission === 'object') {
+        return props.submission;
+    }
+    return null;
+});
+
+const safeAllSubmissionsData = computed(() => {
+    if (!props.allSubmissions) return [];
+
+    // If it's a paginator with data property
+    if (props.allSubmissions.data) {
+        return props.allSubmissions.data;
+    }
+
+    // If it's directly an array
+    if (Array.isArray(props.allSubmissions)) {
+        return props.allSubmissions;
+    }
+
+    // If it's an object, try to extract data
+    if (typeof props.allSubmissions === 'object') {
+        // Try common paginator formats
+        if (
+            'Illuminate\\Pagination\\LengthAwarePaginator' in
+            props.allSubmissions
+        ) {
+            return (
+                props.allSubmissions[
+                    'Illuminate\\Pagination\\LengthAwarePaginator'
+                ].data || []
+            );
+        }
+    }
+
+    return [];
+});
+
+// Generate URLs using extracted IDs
+const assignmentsIndexUrl = computed(() => {
+    return route('admin.assignments.index', { class: extractedClassId.value });
+});
+
+const statusClasses = computed(() => {
+    const status = safeAssignment.value.status;
+    const classes: Record<string, string> = {
+        draft: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+        published:
+            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        closed: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    };
+    return classes[status] || classes.draft;
+});
+
+const submissionStatusClasses = computed(() => {
+    if (!submission.value) return '';
+
+    if (submission.value.status === 'graded') {
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+    } else if (submission.value.status === 'late') {
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+    } else if (submission.value.status === 'submitted') {
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    }
+    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+});
+
+const timeLeftClass = computed(() => {
+    const deadline = new Date(safeAssignment.value.deadline);
+    if (isNaN(deadline.getTime())) return 'text-gray-900 dark:text-gray-100';
+
+    const now = new Date();
+    const diffHours = Math.floor(
+        (deadline.getTime() - now.getTime()) / (1000 * 60 * 60),
+    );
+
+    if (diffHours < 0) return 'text-red-600 dark:text-red-400';
+    if (diffHours < 24) return 'text-amber-600 dark:text-amber-400';
+    return 'text-gray-900 dark:text-gray-100';
+});
+
+const timeLeftText = computed(() => {
+    const deadline = new Date(safeAssignment.value.deadline);
+    if (isNaN(deadline.getTime())) return 'No deadline';
+
+    const now = new Date();
+    const diffMs = deadline.getTime() - now.getTime();
+
+    if (diffMs < 0) return 'Overdue';
+
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(
+        (diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+    );
+
+    if (diffDays > 0) return `${diffDays}d ${diffHours}h left`;
+    if (diffHours > 0) return `${diffHours}h left`;
+    return '< 1h left';
+});
+
+const getStatusClasses = (status: string) => {
+    const classes: Record<string, string> = {
+        pending:
+            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+        submitted:
+            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+        graded: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        late: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    };
+    return classes[status] || classes.pending;
+};
+
+const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    } catch (error) {
+        return 'Invalid date';
+    }
+};
+
+const toggleAssignmentStatus = () => {
+    const newStatus =
+        safeAssignment.value.status === 'closed' ? 'published' : 'closed';
+    const action =
+        safeAssignment.value.status === 'closed' ? 'reopen' : 'close';
+
+    if (confirm(`Are you sure you want to ${action} this assignment?`)) {
+        router.put(
+            route('admin.assignments.status', {
+                class: extractedClassId.value,
+                assignment: safeAssignment.value.id,
+            }),
+            { status: newStatus },
+            { preserveScroll: true },
+        );
+    }
+};
+
+const handleSubmission = () => {
+    // Refresh the page to show updated submission
+    router.reload({ preserveScroll: true });
+};
+
+const gradeSubmission = (submissionItem: any) => {
+    // You'll need to implement grading functionality
+    console.log('Grade submission:', submissionItem);
+    // This would typically open a modal or navigate to a grading page
+};
+
+// Note: Removed breadcrumbs for now since they rely on classData.name
+// which might not be available due to the string issue
+</script>
+
 <template>
     <AppLayout>
         <div class="container mx-auto px-4 py-8">
@@ -464,239 +696,3 @@
         </div>
     </AppLayout>
 </template>
-
-<script setup lang="ts">
-import SubmissionForm from '@/components/assignments/SubmissionForm.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Link, router } from '@inertiajs/vue3';
-import { ArrowLeft, User } from 'lucide-vue-next';
-import { computed } from 'vue';
-
-// Import your Wayfinder route definitions
-import assignments from '@/routes/admin/assignments';
-
-// For debugging
-const debugMode = import.meta.env.DEV;
-
-const props = defineProps<{
-    class?: any; // Could be string or object
-    assignment?: any;
-    isFaculty?: boolean;
-    submission?: any;
-    allSubmissions?: any; // Could be paginator object or array
-}>();
-
-// Extract IDs from URL as fallback
-const extractClassIdFromUrl = (): number => {
-    try {
-        const url = window.location.pathname;
-        const match = url.match(/\/classes\/(\d+)\/assignments\/\d+/);
-        return match ? parseInt(match[1]) : 0;
-    } catch (error) {
-        console.error('Error extracting class ID from URL:', error);
-        return 0;
-    }
-};
-
-const extractAssignmentIdFromUrl = (): number => {
-    try {
-        const url = window.location.pathname;
-        const match = url.match(/\/classes\/\d+\/assignments\/(\d+)/);
-        return match ? parseInt(match[1]) : 0;
-    } catch (error) {
-        console.error('Error extracting assignment ID from URL:', error);
-        return 0;
-    }
-};
-
-const extractedClassId = computed(() => extractClassIdFromUrl());
-const extractedAssignmentId = computed(() => extractAssignmentIdFromUrl());
-
-// Safe computed properties
-const safeAssignment = computed(() => {
-    if (props.assignment && typeof props.assignment === 'object') {
-        return {
-            id: props.assignment.id || extractedAssignmentId.value,
-            title: props.assignment.title || 'Untitled Assignment',
-            description: props.assignment.description || '',
-            instructions: props.assignment.instructions || '',
-            total_marks: props.assignment.total_marks || 0,
-            deadline: props.assignment.deadline || '',
-            status: props.assignment.status || 'draft',
-            attachments: props.assignment.attachments || [],
-            submissions_count: props.assignment.submissions_count || 0,
-        };
-    }
-    return {
-        id: extractedAssignmentId.value,
-        title: 'Assignment',
-        description: '',
-        total_marks: 0,
-        deadline: '',
-        status: 'draft',
-        attachments: [],
-        submissions_count: 0,
-    };
-});
-
-const isFaculty = computed(() => props.isFaculty || false);
-
-const submission = computed(() => {
-    if (props.submission && typeof props.submission === 'object') {
-        return props.submission;
-    }
-    return null;
-});
-
-const safeAllSubmissionsData = computed(() => {
-    if (!props.allSubmissions) return [];
-
-    // If it's a paginator with data property
-    if (props.allSubmissions.data) {
-        return props.allSubmissions.data;
-    }
-
-    // If it's directly an array
-    if (Array.isArray(props.allSubmissions)) {
-        return props.allSubmissions;
-    }
-
-    // If it's an object, try to extract data
-    if (typeof props.allSubmissions === 'object') {
-        // Try common paginator formats
-        if (
-            'Illuminate\\Pagination\\LengthAwarePaginator' in
-            props.allSubmissions
-        ) {
-            return (
-                props.allSubmissions[
-                    'Illuminate\\Pagination\\LengthAwarePaginator'
-                ].data || []
-            );
-        }
-    }
-
-    return [];
-});
-
-// Generate URLs using extracted IDs
-const assignmentsIndexUrl = computed(() => {
-    return assignments.index.url({ class: extractedClassId.value });
-});
-
-const statusClasses = computed(() => {
-    const status = safeAssignment.value.status;
-    const classes: Record<string, string> = {
-        draft: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-        published:
-            'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-        closed: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    };
-    return classes[status] || classes.draft;
-});
-
-const submissionStatusClasses = computed(() => {
-    if (!submission.value) return '';
-
-    if (submission.value.status === 'graded') {
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-    } else if (submission.value.status === 'late') {
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-    } else if (submission.value.status === 'submitted') {
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-    }
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-});
-
-const timeLeftClass = computed(() => {
-    const deadline = new Date(safeAssignment.value.deadline);
-    if (isNaN(deadline.getTime())) return 'text-gray-900 dark:text-gray-100';
-
-    const now = new Date();
-    const diffHours = Math.floor(
-        (deadline.getTime() - now.getTime()) / (1000 * 60 * 60),
-    );
-
-    if (diffHours < 0) return 'text-red-600 dark:text-red-400';
-    if (diffHours < 24) return 'text-amber-600 dark:text-amber-400';
-    return 'text-gray-900 dark:text-gray-100';
-});
-
-const timeLeftText = computed(() => {
-    const deadline = new Date(safeAssignment.value.deadline);
-    if (isNaN(deadline.getTime())) return 'No deadline';
-
-    const now = new Date();
-    const diffMs = deadline.getTime() - now.getTime();
-
-    if (diffMs < 0) return 'Overdue';
-
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(
-        (diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-    );
-
-    if (diffDays > 0) return `${diffDays}d ${diffHours}h left`;
-    if (diffHours > 0) return `${diffHours}h left`;
-    return '< 1h left';
-});
-
-const getStatusClasses = (status: string) => {
-    const classes: Record<string, string> = {
-        pending:
-            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-        submitted:
-            'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-        graded: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-        late: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    };
-    return classes[status] || classes.pending;
-};
-
-const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    try {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    } catch (error) {
-        return 'Invalid date';
-    }
-};
-
-const toggleAssignmentStatus = () => {
-    const newStatus =
-        safeAssignment.value.status === 'closed' ? 'published' : 'closed';
-    const action =
-        safeAssignment.value.status === 'closed' ? 'reopen' : 'close';
-
-    if (confirm(`Are you sure you want to ${action} this assignment?`)) {
-        router.put(
-            assignments.status.url({
-                class: extractedClassId.value,
-                assignment: safeAssignment.value.id,
-            }),
-            { status: newStatus },
-            { preserveScroll: true },
-        );
-    }
-};
-
-const handleSubmission = () => {
-    // Refresh the page to show updated submission
-    router.reload({ preserveScroll: true });
-};
-
-const gradeSubmission = (submissionItem: any) => {
-    // You'll need to implement grading functionality
-    console.log('Grade submission:', submissionItem);
-    // This would typically open a modal or navigate to a grading page
-};
-
-// Note: Removed breadcrumbs for now since they rely on classData.name
-// which might not be available due to the string issue
-</script>

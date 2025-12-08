@@ -1,4 +1,64 @@
-<!-- resources/js/pages/Classes/Show.vue -->
+<script setup lang="ts">
+import AssignmentCard from '@/components/assignments/AssignmentCard.vue';
+import StudentList from '@/components/classes/StudentList.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Link, router } from '@inertiajs/vue3';
+import { ArrowLeft, FileText, Plus } from 'lucide-vue-next';
+import { computed } from 'vue';
+
+// Import your Wayfinder route definitions
+import { route } from 'ziggy-js';
+
+// Props should match what your controller sends
+const props = defineProps<{
+    classData: any; // From controller: 'class' => $class
+    isEnrolled: boolean;
+    isFaculty: boolean;
+    enrollmentCount: number;
+}>();
+
+// Create computed property with better name
+const classData = computed(() => props.classData);
+const safeEnrollments = computed(() => {
+    return classData.value?.enrollments?.map((e: any) => e.student) || [];
+});
+
+// Generate URLs
+const classesIndexUrl = computed(() => route('admin.classes.index'));
+const assignmentIndexUrl = computed(() => {
+    if (!classData.value?.id) return '';
+    return route('admin.assignments.index', { class: classData.value.id });
+});
+
+const assignmentCreateUrl = computed(() => {
+    if (!classData.value?.id) return '';
+    return route('admin.assignments.create', { class: classData.value.id });
+});
+
+const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+};
+
+const joinClass = () => {
+    if (confirm('Are you sure you want to join this class?')) {
+        router.post(
+            route('admin.classes.join'), // <-- use Ziggy route
+            { class_id: classData.value.id },
+            {
+                preserveScroll: true,
+                onSuccess: () => router.reload(),
+                onError: (errors) =>
+                    console.error('Failed to join class:', errors),
+            },
+        );
+    }
+};
+</script>
+
 <template>
     <AppLayout>
         <div class="container mx-auto px-4 py-8">
@@ -248,71 +308,3 @@
         </div>
     </AppLayout>
 </template>
-
-<script setup lang="ts">
-import AssignmentCard from '@/components/assignments/AssignmentCard.vue';
-import StudentList from '@/components/classes/StudentList.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Link, router } from '@inertiajs/vue3';
-import { ArrowLeft, FileText, Plus } from 'lucide-vue-next';
-import { computed } from 'vue';
-
-// Import your Wayfinder route definitions
-import assignments from '@/routes/admin/assignments';
-import classes from '@/routes/admin/classes';
-
-// Props should match what your controller sends
-const props = defineProps<{
-    class: any; // From controller: 'class' => $class
-    isEnrolled: boolean;
-    isFaculty: boolean;
-    enrollmentCount: number;
-}>();
-
-// Create computed property with better name
-const classData = computed(() => props.class);
-const safeEnrollments = computed(() => {
-    return classData.value?.enrollments?.map((e: any) => e.student) || [];
-});
-
-// Generate URLs
-const classesIndexUrl = computed(() => classes.index.url());
-const assignmentIndexUrl = computed(() => {
-    if (!classData.value?.id) return '';
-    return assignments.index.url({ class: classData.value.id });
-});
-
-const assignmentCreateUrl = computed(() => {
-    if (!classData.value?.id) return '';
-    return assignments.create.url({ class: classData.value.id });
-});
-
-const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-};
-
-const joinClass = () => {
-    if (confirm('Are you sure you want to join this class?')) {
-        router.post(
-            classes.join.url(),
-            {
-                class_id: classData.value.id,
-            },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    // Refresh the page or show success message
-                    router.reload();
-                },
-                onError: (errors) => {
-                    console.error('Failed to join class:', errors);
-                },
-            },
-        );
-    }
-};
-</script>

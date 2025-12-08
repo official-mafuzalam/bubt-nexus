@@ -12,14 +12,8 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/composables/useAuth';
-import { dashboard } from '@/routes';
-import { index as apiIndex } from '@/routes/admin/api';
-import { index as notesIndex } from '@/routes/admin/notes';
-import { index as classroomIndex } from '@/routes/admin/classes';
 import permissions from '@/routes/admin/permissions';
 import roles from '@/routes/admin/roles';
-import { index as routineIndex } from '@/routes/admin/routines';
-import { index as settingsIndex } from '@/routes/admin/settings';
 import users from '@/routes/admin/users';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -34,6 +28,7 @@ import {
     Users,
 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import { route } from 'ziggy-js';
 import AppLogo from './AppLogo.vue';
 const { hasRole, hasPermission, can } = useAuth();
 
@@ -82,7 +77,7 @@ const mainNavItems = computed(() => {
     // Dashboard - available to all authenticated users
     items.push({
         title: 'Dashboard',
-        href: dashboard(),
+        href: route('dashboard'),
         icon: LayoutGrid,
     });
 
@@ -95,7 +90,7 @@ const mainNavItems = computed(() => {
     ) {
         items.push({
             title: 'Notes',
-            href: notesIndex(),
+            href: route('admin.notes.index'),
             icon: Users,
         });
     }
@@ -109,12 +104,12 @@ const mainNavItems = computed(() => {
     ) {
         items.push({
             title: 'Routines',
-            href: routineIndex(),
+            href: route('admin.routines.index'),
             icon: LayoutGrid,
         });
         items.push({
             title: 'Class Rooms',
-            href: classroomIndex(),
+            href: route('admin.classes.index'),
             icon: Building,
         });
     }
@@ -123,7 +118,7 @@ const mainNavItems = computed(() => {
     if (hasRole(['super_admin', 'admin'])) {
         items.push({
             title: 'API Documentation',
-            href: apiIndex(),
+            href: route('admin.api.index'),
             icon: ArrowUpRightFromSquare,
         });
     }
@@ -132,7 +127,7 @@ const mainNavItems = computed(() => {
     if (hasRole('super_admin') || hasPermission('site_settings')) {
         items.push({
             title: 'Site Settings',
-            href: settingsIndex(),
+            href: route('admin.settings.index'),
             icon: Settings,
         });
     }
@@ -189,7 +184,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="route('dashboard')">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>

@@ -8,6 +8,7 @@ use App\Models\ClassEnrollment;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class ClassController extends Controller
 {
@@ -89,7 +90,7 @@ class ClassController extends Controller
             ->exists();
 
         return Inertia::render('admin/Classes/Show', [
-            'class' => $class,
+            'classData' => $class,
             'isEnrolled' => $isEnrolled,
             'isFaculty' => $class->faculty_id === $user->id,
             'enrollmentCount' => $class->enrollments()->where('status', 'active')->count(),
