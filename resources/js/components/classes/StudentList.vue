@@ -6,7 +6,7 @@
         <!-- Header -->
         <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                Enrolled Students ({{ students.length }})
+                Enrolled Students ({{ students?.length || 0 }})
             </h3>
         </div>
 
@@ -59,7 +59,7 @@
                                     <p
                                         class="font-medium text-gray-900 dark:text-white"
                                     >
-                                        {{ student.name }}
+                                        {{ student?.name || 'Unknown' }}
                                     </p>
                                 </div>
                             </div>
@@ -68,20 +68,21 @@
                             <span
                                 class="text-sm text-gray-600 dark:text-gray-400"
                             >
-                                {{ student.user_detail?.student_id || 'N/A' }}
+                                {{ student?.user_detail?.student_id || 'N/A' }}
                             </span>
                         </td>
                         <td class="px-6 py-4">
                             <span
                                 class="text-sm text-gray-600 dark:text-gray-400"
                             >
-                                {{ student.email }}
+                                {{ student?.email || 'N/A' }}
                             </span>
                         </td>
                         <td v-if="isFaculty" class="px-6 py-4">
                             <button
-                                @click="removeStudent(student.id)"
-                                class="rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200"
+                                @click="removeStudent(student?.id)"
+                                :disabled="!student?.id"
+                                class="rounded-md bg-red-100 px-3 py-1 text-xs font-medium text-red-700 hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-red-900 dark:text-red-200"
                                 title="Remove from class"
                             >
                                 Remove
@@ -90,7 +91,7 @@
                     </tr>
 
                     <!-- Empty State -->
-                    <tr v-if="!students.length">
+                    <tr v-if="!students?.length">
                         <td colspan="4" class="px-6 py-12 text-center">
                             <div
                                 class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400"
@@ -111,24 +112,27 @@ import { router } from '@inertiajs/vue3';
 import { User, Users } from 'lucide-vue-next';
 
 const props = defineProps<{
-    students: Array<{
-        id: number;
-        name: string;
-        email: string;
+    students?: Array<{
+        id?: number;
+        name?: string;
+        email?: string;
         user_detail?: {
             student_id?: string;
         };
     }>;
-    classId: number;
-    isFaculty: boolean;
+    classId?: number;
+    isFaculty?: boolean;
 }>();
 
-const removeStudent = (studentId: number) => {
+const removeStudent = (studentId?: number) => {
+    if (!studentId || !props.classId) return;
+
     if (
         confirm('Are you sure you want to remove this student from the class?')
     ) {
+        // You'll need to create this route in Laravel
         router.delete(
-            route('classes.removeStudent', {
+            route('admin.classes.removeStudent', {
                 class: props.classId,
                 student: studentId,
             }),

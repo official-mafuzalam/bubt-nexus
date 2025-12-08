@@ -127,11 +127,12 @@ const props = defineProps<{
         name: string;
         description?: string;
         subject_code: string;
-        semester: number;
+        semester: number | string;
         section: string;
     };
 }>();
 
+// Use Inertia's useForm directly in this component
 const form = useForm({
     name: props.initialData?.name || '',
     description: props.initialData?.description || '',
@@ -145,6 +146,7 @@ const emit = defineEmits<{
 }>();
 
 const submit = () => {
-    emit('submit', form.data);
+    // Transform form.data() to a plain object before emitting
+    emit('submit', form.data());
 };
 </script>

@@ -15,8 +15,8 @@
                 required
                 placeholder="e.g., Python Programming Assignment 1"
             />
-            <p v-if="form.errors.title" class="mt-1 text-sm text-red-500">
-                {{ form.errors.title }}
+            <p v-if="errors.title" class="mt-1 text-sm text-red-500">
+                {{ errors.title }}
             </p>
         </div>
 
@@ -34,8 +34,8 @@
                 required
                 placeholder="Detailed description of the assignment..."
             ></textarea>
-            <p v-if="form.errors.description" class="mt-1 text-sm text-red-500">
-                {{ form.errors.description }}
+            <p v-if="errors.description" class="mt-1 text-sm text-red-500">
+                {{ errors.description }}
             </p>
         </div>
 
@@ -52,11 +52,8 @@
                 class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 placeholder="Any specific instructions for submission..."
             ></textarea>
-            <p
-                v-if="form.errors.instructions"
-                class="mt-1 text-sm text-red-500"
-            >
-                {{ form.errors.instructions }}
+            <p v-if="errors.instructions" class="mt-1 text-sm text-red-500">
+                {{ errors.instructions }}
             </p>
         </div>
 
@@ -78,11 +75,8 @@
                     required
                     placeholder="e.g., 100"
                 />
-                <p
-                    v-if="form.errors.total_marks"
-                    class="mt-1 text-sm text-red-500"
-                >
-                    {{ form.errors.total_marks }}
+                <p v-if="errors.total_marks" class="mt-1 text-sm text-red-500">
+                    {{ errors.total_marks }}
                 </p>
             </div>
             <div>
@@ -98,11 +92,8 @@
                     required
                     :min="minDateTime"
                 />
-                <p
-                    v-if="form.errors.deadline"
-                    class="mt-1 text-sm text-red-500"
-                >
-                    {{ form.errors.deadline }}
+                <p v-if="errors.deadline" class="mt-1 text-sm text-red-500">
+                    {{ errors.deadline }}
                 </p>
             </div>
         </div>
@@ -175,10 +166,10 @@
             </button>
             <button
                 type="submit"
-                :disabled="form.processing"
+                :disabled="processing"
                 class="rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
             >
-                <span v-if="form.processing">{{
+                <span v-if="processing">{{
                     editing ? 'Updating...' : 'Creating...'
                 }}</span>
                 <span v-else>{{
@@ -190,11 +181,10 @@
 </template>
 
 <script setup lang="ts">
-import { useForm } from '@inertiajs/vue3';
 import { Paperclip, X } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 
-const props = defineProps<{
+interface Props {
     classId: number;
     editing?: boolean;
     initialData?: {
@@ -205,7 +195,16 @@ const props = defineProps<{
         deadline: string;
         attachments?: File[];
     };
-}>();
+    errors?: Record<string, string>;
+    processing?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    editing: false,
+    initialData: undefined,
+    errors: () => ({}),
+    processing: false,
+});
 
 const emit = defineEmits<{
     submit: [data: FormData];
@@ -214,14 +213,18 @@ const emit = defineEmits<{
 
 const fileInput = ref<HTMLInputElement>();
 
-const form = useForm({
+// Use reactive instead of useForm since we're not using Inertia form directly
+const form = reactive({
     title: props.initialData?.title || '',
     description: props.initialData?.description || '',
     instructions: props.initialData?.instructions || '',
-    total_marks: props.initialData?.total_marks || '',
+    total_marks: props.initialData?.total_marks || 100,
     deadline: props.initialData?.deadline || '',
     attachments: props.initialData?.attachments || [],
 });
+
+const errors = computed(() => props.errors || {});
+const processing = computed(() => props.processing || false);
 
 const minDateTime = computed(() => {
     const now = new Date();

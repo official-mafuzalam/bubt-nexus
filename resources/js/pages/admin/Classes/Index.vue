@@ -1,4 +1,3 @@
-<!-- resources/js/pages/Classes/Index.vue -->
 <template>
     <AppLayout>
         <div class="container mx-auto px-4 py-8">
@@ -19,7 +18,7 @@
             <!-- Create Class Button (Faculty only) -->
             <div v-if="userType === 'faculty'" class="mb-6">
                 <Link
-                    :href="route('classes.create')"
+                    :href="classes.create.url()"
                     class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-400 focus:outline-none"
                 >
                     <Plus class="h-4 w-4" />
@@ -44,11 +43,6 @@
                     :is-faculty="userType === 'faculty'"
                 />
             </div>
-
-            <!-- Pagination -->
-            <!-- <div v-if="hasClasses && hasPagination" class="mt-8">
-                <Pagination :links="safeClasses.links" />
-            </div> -->
 
             <!-- Empty State -->
             <div
@@ -76,11 +70,13 @@
 <script setup lang="ts">
 import ClassCard from '@/components/classes/ClassCard.vue';
 import EnrollmentForm from '@/components/classes/EnrollmentForm.vue';
-// import Pagination from '@/components/ui/Pagination.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { Plus, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
+
+// Import your Wayfinder route definitions - make sure this is the correct path
+import classes from '@/routes/admin/classes'; // Or '@/routes/admin/classes'
 
 interface Props {
     classes?: {
@@ -95,9 +91,6 @@ const props = withDefaults(defineProps<Props>(), {
     userType: 'student',
 });
 
-// Get route helper from Inertia
-const { route } = usePage();
-
 // Safe computed properties
 const safeClasses = computed(() => {
     return props.classes || { data: [], links: [] };
@@ -105,9 +98,5 @@ const safeClasses = computed(() => {
 
 const hasClasses = computed(() => {
     return safeClasses.value.data && safeClasses.value.data.length > 0;
-});
-
-const hasPagination = computed(() => {
-    return safeClasses.value.links && safeClasses.value.links.length > 3;
 });
 </script>

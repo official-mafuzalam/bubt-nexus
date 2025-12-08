@@ -68,14 +68,19 @@ class ClassController extends Controller
             'enrollment_code' => ClassModel::generateEnrollmentCode(),
         ]);
 
-        return redirect()->route('classes.show', $class->id)
+        return redirect()->route('admin.classes.show', $class->id)
             ->with('success', 'Class created successfully!');
     }
 
     public function show($id)
     {
-        $class = ClassModel::with(['faculty', 'enrollments.student', 'assignments'])
-            ->findOrFail($id);
+        $class = ClassModel::with([
+            'faculty',
+            'enrollments.student.userDetail',
+            'assignments' => function ($query) {
+                $query->withCount('submissions');
+            }
+        ])->findOrFail($id);
 
         $user = Auth::user();
         $isEnrolled = ClassEnrollment::where('class_id', $id)

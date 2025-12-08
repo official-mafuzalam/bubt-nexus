@@ -84,7 +84,7 @@
         <!-- Actions -->
         <div class="mt-6 flex items-center justify-between">
             <Link
-                :href="route('classes.show', classItem.id)"
+                :href="classShowUrl"
                 class="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
             >
                 View Class →
@@ -92,7 +92,7 @@
 
             <div v-if="isFaculty" class="flex gap-2">
                 <Link
-                    :href="route('assignments.create', classItem.id)"
+                    :href="assignmentCreateUrl"
                     class="rounded-md bg-amber-500 px-3 py-1 text-xs font-medium text-white hover:bg-amber-600"
                 >
                     Add Assignment
@@ -103,9 +103,13 @@
 </template>
 
 <script setup lang="ts">
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { Building } from 'lucide-vue-next';
 import { computed } from 'vue';
+
+// Import your Wayfinder route definitions
+import assignments from '@/routes/admin/assignments'; // Import from assignments file
+import classes from '@/routes/admin/classes'; // This should be from your classes file
 
 interface Props {
     classItem?: {
@@ -139,11 +143,19 @@ const props = withDefaults(defineProps<Props>(), {
     isFaculty: false,
 });
 
-const { route } = usePage();
-
 const statusClasses = computed(() => {
     return props.classItem.is_active
         ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
         : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+});
+
+// Generate URLs using Wayfinder
+const classShowUrl = computed(() => {
+    return classes.show.url({ class: props.classItem.id });
+});
+
+// Generate assignment create URL
+const assignmentCreateUrl = computed(() => {
+    return assignments.create.url({ class: props.classItem.id });
 });
 </script>
