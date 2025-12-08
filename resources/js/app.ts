@@ -6,11 +6,14 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { initializeTheme } from './composables/useAppearance';
 
-// ✅ Import toast library
+import { ZiggyVue, route } from 'ziggy-js';
+
+// Toast
 import Toast from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
-import { configureEcho } from '@laravel/echo-vue';
 
+// Echo
+import { configureEcho } from '@laravel/echo-vue';
 configureEcho({
     broadcaster: 'reverb',
 });
@@ -29,7 +32,10 @@ createInertiaApp({
 
         vueApp.use(plugin);
 
-        // ✅ Register Toast globally
+        // 🟩 ADD Ziggy to Vue
+        vueApp.use(ZiggyVue);
+
+        // Toast
         vueApp.use(Toast, {
             autoClose: 3000,
             position: 'top-right',
@@ -43,5 +49,5 @@ createInertiaApp({
     },
 });
 
-// This will set light / dark mode on page load...
+// Init theme
 initializeTheme();

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\ApiController;
+use App\Http\Controllers\Admin\AssignmentController;
+use App\Http\Controllers\Admin\ClassController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\NotesController;
 use App\Http\Controllers\Admin\PermissionController;
@@ -8,6 +10,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RoutineController;
 use App\Http\Controllers\Admin\RoutineScraperController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\SubmissionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Public\HomeController as PublicHomeController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +25,27 @@ Route::get('/', [PublicHomeController::class, 'index'])->name('home');
 Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|student'])->prefix('admin-dashboard')->group(function () {
 
     Route::get('/', [HomeController::class, 'index'])->name('dashboard');
+
+    Route::prefix('/classes')->name('admin.')->group(function () {
+        // Classes
+        Route::get('/', [ClassController::class, 'index'])->name('classes.index');
+        Route::get('/create', [ClassController::class, 'create'])->name('classes.create');
+        Route::post('create', [ClassController::class, 'store'])->name('classes.store');
+        Route::get('/{class}', [ClassController::class, 'show'])->name('classes.show');
+        Route::post('/join', [ClassController::class, 'join'])->name('classes.join');
+
+        // Assignments
+        Route::get('/{class}/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
+        Route::get('/{class}/assignments/create', [AssignmentController::class, 'create'])->name('assignments.create');
+        Route::post('/{class}/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
+        Route::get('/{class}/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
+        Route::put('/{class}/assignments/{assignment}/status', [AssignmentController::class, 'updateStatus'])->name('assignments.status');
+
+        // Submissions
+        Route::post('/{class}/assignments/{assignment}/submit', [SubmissionController::class, 'submit'])->name('submissions.submit');
+        Route::post('/submissions/{submission}/grade', [SubmissionController::class, 'grade'])->name('submissions.grade');
+        Route::get('/submissions/{submission}/download/{index}', [SubmissionController::class, 'downloadAttachment'])->name('submissions.download');
+    });
 
     // Routine Management Routes
     Route::resource('routines', RoutineController::class)->names('admin.routines');
