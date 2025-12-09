@@ -80,8 +80,8 @@ const mainNavItems = computed(() => {
     // Notes - check role or permission
     if (
         can({
-            roles: ['super_admin', 'admin', 'faculty'],
-            permissions: ['notes_view'],
+            roles: ['super_admin', 'admin'],
+            permissions: ['notes_view', 'classes_view' ],
         })
     ) {
         items.push({
@@ -89,21 +89,6 @@ const mainNavItems = computed(() => {
             href: route('admin.notes.index'),
             icon: Users,
             routeName: 'admin.notes.index',
-        });
-    }
-
-    // Routines - check role or permission
-    if (
-        can({
-            roles: ['super_admin', 'admin', 'faculty', 'student'],
-            permissions: ['routines_view'],
-        })
-    ) {
-        items.push({
-            title: 'My Routines',
-            href: route('admin.myRoutines'),
-            icon: LayoutGrid,
-            routeName: ['admin.myRoutines'],
         });
         items.push({
             title: 'Class Rooms',
@@ -121,7 +106,22 @@ const mainNavItems = computed(() => {
     // Routines - check role or permission
     if (
         can({
-            roles: ['super_admin', 'admin','student'],
+            roles: ['super_admin', 'admin', 'faculty', 'student'],
+            permissions: ['routines_view'],
+        })
+    ) {
+        items.push({
+            title: 'My Routines',
+            href: route('admin.myRoutines'),
+            icon: LayoutGrid,
+            routeName: ['admin.myRoutines'],
+        });
+    }
+
+    // Routines - check role or permission
+    if (
+        can({
+            roles: ['super_admin', 'admin'],
             permissions: ['routines_manage'],
         })
     ) {

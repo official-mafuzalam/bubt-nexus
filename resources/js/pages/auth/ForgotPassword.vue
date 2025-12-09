@@ -19,6 +19,7 @@ defineProps<{
     <AuthLayout
         title="Forgot password"
         description="Enter your email to receive a password reset link"
+        type="login"
     >
         <Head title="Forgot password" />
 
