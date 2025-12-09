@@ -47,6 +47,8 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|stud
         Route::get('/submissions/{submission}/download/{index}', [SubmissionController::class, 'downloadAttachment'])->name('submissions.download');
     });
 
+    Route::get('/my-routines', [RoutineController::class, 'myRoutines'])->name('admin.myRoutines');
+
     // Routine Management Routes
     Route::resource('routines', RoutineController::class)->names('admin.routines');
     Route::post('routines/bulk-destroy', [RoutineController::class, 'bulkDestroy'])->name('admin.routines.bulk-destroy');

@@ -8,6 +8,7 @@ use App\Models\Program;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RoutineController extends Controller
 {
@@ -643,6 +644,31 @@ class RoutineController extends Controller
             'teacher_codes' => $query->distinct()->orderBy('teacher_code')->pluck('teacher_code'),
             'course_codes' => $query->distinct()->orderBy('course_code')->pluck('course_code'),
             'room_numbers' => $query->distinct()->orderBy('room_number')->pluck('room_number'),
+        ]);
+    }
+
+    /**
+     * Display routines for the authenticated user
+     */
+    public function myRoutines(Request $request)
+    {
+        $user = $request->user();
+        $program = $user->UserDetail->program_id;
+        $intake = $user->UserDetail->intake;
+        $section = $user->UserDetail->section;
+        $semester = $user->UserDetail->current_semester;
+
+        $routines = ClassRoutine::where('program_id', $program)
+            ->where('intake', $intake)
+            ->where('section', $section)
+            ->where('semester', 'like', '%' . $semester . '%')
+            ->orderByRaw("FIELD(day, 'SAT', 'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI')")
+            ->orderBy('start_time')
+            ->get();
+
+        // Log::info('My Routines', ['user_id' => $user->id, 'program_id' => $program, 'intake' => $intake, 'section' => $section, 'semester' => $semester, 'routines' => $routines, 'routines_count' => $routines->count()]);
+        return Inertia::render('admin/Routines/MyRoutines', [
+            'routines' => $routines,
         ]);
     }
 }

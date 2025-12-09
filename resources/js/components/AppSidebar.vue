@@ -12,11 +12,8 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/composables/useAuth';
-import permissions from '@/routes/admin/permissions';
-import roles from '@/routes/admin/roles';
-import users from '@/routes/admin/users';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import {
     ArrowUpRightFromSquare,
     Building,
@@ -35,26 +32,24 @@ const { hasRole, hasPermission, can } = useAuth();
 // Track expanded state for the Accounts group - closed by default
 const isAccountsExpanded = ref(false);
 
-const page = usePage();
-
 // Check if current route is one of the account routes
 const isAccountRouteActive = computed(() => {
-    const currentUrl = page.url;
+    const currentRoute = route().current();
     return (
-        currentUrl.includes('/admin-dashboard/roles') ||
-        currentUrl.includes('/admin-dashboard/permissions') ||
-        currentUrl.includes('/admin-dashboard/users')
+        currentRoute?.includes('admin.roles') ||
+        currentRoute?.includes('admin.permissions') ||
+        currentRoute?.includes('admin.users')
     );
 });
 
 // Watch for route changes and expand accounts if on account routes
 watch(
-    () => page.url,
-    (newUrl) => {
+    () => route().current(),
+    (newRoute) => {
         if (
-            newUrl.includes('/admin-dashboard/roles') ||
-            newUrl.includes('/admin-dashboard/permissions') ||
-            newUrl.includes('/admin-dashboard/users')
+            newRoute?.includes('admin.roles') ||
+            newRoute?.includes('admin.permissions') ||
+            newRoute?.includes('admin.users')
         ) {
             isAccountsExpanded.value = true;
         }
@@ -72,26 +67,28 @@ const showAccountsSection = computed(() => {
 
 // Main navigation items with access control
 const mainNavItems = computed(() => {
-    const items: NavItem[] = [];
+    const items: Array<NavItem & { routeName: string | string[] }> = [];
 
     // Dashboard - available to all authenticated users
     items.push({
         title: 'Dashboard',
         href: route('dashboard'),
         icon: LayoutGrid,
+        routeName: 'dashboard',
     });
 
     // Notes - check role or permission
     if (
         can({
             roles: ['super_admin', 'admin', 'faculty'],
-            permissions: ['notes_view'], // Add this permission to your permissions table
+            permissions: ['notes_view'],
         })
     ) {
         items.push({
             title: 'Notes',
             href: route('admin.notes.index'),
             icon: Users,
+            routeName: 'admin.notes.index',
         });
     }
 
@@ -99,18 +96,40 @@ const mainNavItems = computed(() => {
     if (
         can({
             roles: ['super_admin', 'admin', 'faculty', 'student'],
-            permissions: ['routines_view'], // Add this permission to your permissions table
+            permissions: ['routines_view'],
         })
     ) {
         items.push({
-            title: 'Routines',
-            href: route('admin.routines.index'),
+            title: 'My Routines',
+            href: route('admin.myRoutines'),
             icon: LayoutGrid,
+            routeName: ['admin.myRoutines'],
         });
         items.push({
             title: 'Class Rooms',
             href: route('admin.classes.index'),
             icon: Building,
+            routeName: [
+                'admin.classes.index',
+                'admin.classes',
+                'admin.assignments',
+                'admin.submissions',
+            ],
+        });
+    }
+
+    // Routines - check role or permission
+    if (
+        can({
+            roles: ['super_admin', 'admin','student'],
+            permissions: ['routines_manage'],
+        })
+    ) {
+        items.push({
+            title: 'Routines Management',
+            href: route('admin.routines.index'),
+            icon: LayoutGrid,
+            routeName: ['admin.routines.index', 'admin.routines'],
         });
     }
 
@@ -120,6 +139,7 @@ const mainNavItems = computed(() => {
             title: 'API Documentation',
             href: route('admin.api.index'),
             icon: ArrowUpRightFromSquare,
+            routeName: 'admin.api.index',
         });
     }
 
@@ -129,6 +149,7 @@ const mainNavItems = computed(() => {
             title: 'Site Settings',
             href: route('admin.settings.index'),
             icon: Settings,
+            routeName: 'admin.settings.index',
         });
     }
 
@@ -137,14 +158,15 @@ const mainNavItems = computed(() => {
 
 // Accounts navigation items with granular permission checks
 const accountsNavItems = computed(() => {
-    const items: NavItem[] = [];
+    const items: Array<NavItem & { routeName: string | string[] }> = [];
 
     // Roles - check for role permission
     if (hasPermission('role')) {
         items.push({
             title: 'Roles',
-            href: roles.index(),
+            href: route('admin.roles.index'),
             icon: Shield,
+            routeName: ['admin.roles.index', 'admin.roles'],
         });
     }
 
@@ -152,8 +174,9 @@ const accountsNavItems = computed(() => {
     if (hasPermission('permission')) {
         items.push({
             title: 'Permissions',
-            href: permissions.index(),
+            href: route('admin.permissions.index'),
             icon: Key,
+            routeName: ['admin.permissions.index', 'admin.permissions'],
         });
     }
 
@@ -161,8 +184,9 @@ const accountsNavItems = computed(() => {
     if (hasPermission('user')) {
         items.push({
             title: 'Users',
-            href: users.index(),
+            href: route('admin.users.index'),
             icon: Users,
+            routeName: ['admin.users.index', 'admin.users'],
         });
     }
 

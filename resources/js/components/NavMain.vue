@@ -1,3 +1,4 @@
+<!-- components/NavMain.vue -->
 <script setup lang="ts">
 import {
     SidebarGroup,
@@ -6,15 +7,36 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { urlIsActive } from '@/lib/utils';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
+import { route } from 'ziggy-js';
+
+interface NavItemWithRoute extends NavItem {
+    routeName?: string | string[];
+}
 
 defineProps<{
-    items: NavItem[];
+    items: NavItemWithRoute[];
 }>();
 
-const page = usePage();
+// Helper to check if route is active
+const isRouteActive = (routeName?: string | string[]) => {
+    if (!routeName) return false;
+
+    const currentRoute = route().current();
+    if (!currentRoute) return false;
+
+    if (Array.isArray(routeName)) {
+        return routeName.some(
+            (name) =>
+                currentRoute === name || currentRoute.startsWith(name + '.'),
+        );
+    }
+
+    return (
+        currentRoute === routeName || currentRoute.startsWith(routeName + '.')
+    );
+};
 </script>
 
 <template>
@@ -24,7 +46,7 @@ const page = usePage();
             <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton
                     as-child
-                    :is-active="urlIsActive(item.href, page.url)"
+                    :is-active="isRouteActive(item.routeName)"
                     :tooltip="item.title"
                 >
                     <Link :href="item.href">
