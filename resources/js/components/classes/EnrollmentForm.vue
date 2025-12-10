@@ -48,13 +48,14 @@
 
 <script setup lang="ts">
 import { useForm } from '@inertiajs/vue3';
+import { route } from 'ziggy-js';
 
 const form = useForm({
     enrollment_code: '',
 });
 
 const submit = () => {
-    form.post(route('classes.join'), {
+    form.post(route('admin.classes.join'), {
         preserveScroll: true,
         onSuccess: () => {
             form.reset();

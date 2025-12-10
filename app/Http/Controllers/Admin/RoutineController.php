@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ClassRoutine;
 use App\Models\Program;
+use App\Models\User;
 use App\Models\UserDetail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -689,50 +690,132 @@ class RoutineController extends Controller
     }
 
     /**
-     * Display routines for the authenticated user
+     * Display routines for the authenticated user (Student or Teacher)
+     * 
+     * Students see routines for their specific intake/section/semester
+     * Teachers see routines for their assigned classes
      */
     public function myRoutines(Request $request)
     {
         $user = $request->user();
+        $userHasPermission = $user->can('routines_manage');
 
-        $userHasPermission = $request->user()->can('routines_manage');
+        // Load user details with relationship
+        $userDetails = $user->userDetail()->first();
 
-        $userDetails = UserDetail::where('user_id', $user->id)->first();
         if (!$userDetails) {
             return back()->with('error', 'User details not found. Please update your profile.');
         }
-        $program = $userDetails->program_id;
-        $intake = $userDetails->intake;
-        $section = $userDetails->section;
-        $semester = $userDetails->semester;
-        // Log::info('User Info', [
-        //     'prog' => $program,
-        //     'intake' => $intake,
-        //     'section' => $section,
-        //     'semester' => $semester,
-        // ]);
 
-        if (!$program) {
-            return back()->with('error', 'Your profile is incomplete. Please update your program in your user details.');
-        } elseif (!$intake) {
-            return back()->with('error', 'Your profile is incomplete. Please update your intake in your user details.');
-        } elseif (!$section) {
-            return back()->with('error', 'Your profile is incomplete. Please update your section in your user details.');
-        } elseif (!$semester) {
-            return back()->with('error', 'Your profile is incomplete. Please update your current semester in your user details.');
+        // Check if user is student or teacher
+        $isStudent = $user->is_student;
+        $isTeacher = $user->is_faculty || $user->hasRole('teacher');
+
+        // Build query based on user type
+        $query = ClassRoutine::query();
+
+        if ($isStudent) {
+            $routines = $this->getStudentRoutines($userDetails, $query);
+        } elseif ($isTeacher) {
+            $routines = $this->getTeacherRoutines($user, $userDetails, $query);
+        } else {
+            return back()->with('error', 'Your user type could not be determined. Please contact support.');
         }
-
-        $routines = ClassRoutine::where('program_id', $program)
-            ->where('intake', $intake)
-            ->where('section', $section)
-            ->where('semester', 'like', '%' . $semester . '%')
-            ->orderByRaw("FIELD(day, 'SAT', 'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI')")
-            ->orderBy('start_time')
-            ->get();
 
         return Inertia::render('admin/Routines/MyRoutines', [
             'routines' => $routines,
             'userHasPermission' => $userHasPermission,
+            'userType' => $isStudent ? 'student' : 'teacher',
         ]);
+    }
+
+    /**
+     * Get routines for a student based on their intake/section/semester
+     * 
+     * @param UserDetail $userDetails
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Support\Collection
+     */
+    private function getStudentRoutines($userDetails, $query)
+    {
+        // Validate required fields for student
+        $missingFields = $this->validateStudentDetails($userDetails);
+        if (!empty($missingFields)) {
+            return collect([
+                'error' => true,
+                'message' => "Your profile is incomplete. Please update: " . implode(', ', $missingFields),
+            ]);
+        }
+
+        $routines = $query
+            ->where('program_id', $userDetails->program_id)
+            ->where('intake', $userDetails->intake)
+            ->where('section', $userDetails->section)
+            ->where('semester', 'like', '%' . $userDetails->semester . '%')
+            ->active()
+            ->orderByRaw("FIELD(day, 'SAT', 'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI')")
+            ->orderBy('start_time')
+            ->get();
+
+        return $routines;
+    }
+
+    /**
+     * Get routines for a teacher based on their assigned classes
+     * Teachers can see all routines for their program/intake
+     * 
+     * @param User $user
+     * @param UserDetail $userDetails
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Support\Collection
+     */
+    private function getTeacherRoutines($user, $userDetails, $query)
+    {
+        // Teachers can filter by their program if available
+        if ($userDetails->program_id) {
+            $query->where('program_id', $userDetails->program_id);
+        }
+
+        // Optional: Filter by teacher code if available
+        if ($userDetails->faculty_code) {
+            $query->where('teacher_code', $userDetails->faculty_code);
+        }
+
+        $routines = $query
+            ->active()
+            ->orderByRaw("FIELD(day, 'SAT', 'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI')")
+            ->orderBy('start_time')
+            ->get();
+
+        return $routines;
+    }
+
+    /**
+     * Validate required fields for student routine display
+     * 
+     * @param UserDetail $userDetails
+     * @return array Missing field names
+     */
+    private function validateStudentDetails($userDetails): array
+    {
+        $missingFields = [];
+
+        if (empty($userDetails->program_id)) {
+            $missingFields[] = 'Program';
+        }
+
+        if (empty($userDetails->intake)) {
+            $missingFields[] = 'Intake';
+        }
+
+        if (empty($userDetails->section)) {
+            $missingFields[] = 'Section';
+        }
+
+        if (empty($userDetails->semester)) {
+            $missingFields[] = 'Current Semester';
+        }
+
+        return $missingFields;
     }
 }

@@ -1,4 +1,60 @@
-<!-- resources/js/pages/Classes/Create.vue -->
+<script setup lang="ts">
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Link, useForm } from '@inertiajs/vue3';
+import { ArrowLeft } from 'lucide-vue-next';
+import { computed } from 'vue';
+
+// Import your Wayfinder route definitions
+import classes from '@/routes/admin/classes';
+
+// Generate the index URL
+const classesIndexUrl = computed(() => {
+    return classes.index.url();
+});
+
+// Props with proper TypeScript typing
+interface Program {
+    id: number | string;
+    name: string;
+    code: string;
+}
+
+interface Props {
+    programs: Program[];
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    programs: () => [],
+});
+
+// Use Inertia form directly
+const form = useForm({
+    name: '',
+    description: '',
+    subject_code: '',
+    program_id: '',
+    intake: '',
+    section: '',
+});
+
+const submit = () => {
+    // CORRECT WAY: Use the form.post method directly
+    form.post(classes.store.url(), {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Success - redirected by controller
+            console.log('Class created successfully!');
+        },
+        onError: (errors) => {
+            console.error('Form errors:', errors);
+        },
+        onFinish: () => {
+            form.reset();
+        },
+    });
+};
+</script>
+
 <template>
     <AppLayout>
         <div class="container mx-auto px-4 py-8">
@@ -52,53 +108,80 @@
                             </p>
                         </div>
 
-                        <!-- Subject Code -->
-                        <div>
-                            <label
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                            >
-                                Subject Code *
-                            </label>
-                            <input
-                                v-model="form.subject_code"
-                                type="text"
-                                class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                                required
-                                placeholder="e.g., CSE101"
-                            />
-                            <p
-                                v-if="form.errors.subject_code"
-                                class="mt-1 text-sm text-red-500"
-                            >
-                                {{ form.errors.subject_code }}
-                            </p>
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <!-- Subject Code -->
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                >
+                                    Subject Code *
+                                </label>
+                                <input
+                                    v-model="form.subject_code"
+                                    type="text"
+                                    class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                                    required
+                                    placeholder="e.g., CSE101"
+                                />
+                                <p
+                                    v-if="form.errors.subject_code"
+                                    class="mt-1 text-sm text-red-500"
+                                >
+                                    {{ form.errors.subject_code }}
+                                </p>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                                >
+                                    Program *
+                                </label>
+                                <select
+                                    v-model="form.program_id"
+                                    class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                                    required
+                                >
+                                    <option value="">Select Program</option>
+                                    <option
+                                        v-for="program in props.programs"
+                                        :key="program.id"
+                                        :value="program.id"
+                                    >
+                                        {{ program.name }} ({{ program.code }})
+                                    </option>
+                                </select>
+                                <p
+                                    v-if="form.errors.program_id"
+                                    class="mt-1 text-sm text-red-500"
+                                >
+                                    {{ form.errors.program_id }}
+                                </p>
+                            </div>
                         </div>
 
-                        <!-- Semester and Section -->
+                        <!-- Program and Semester -->
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label
                                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
                                 >
-                                    Semester *
+                                    Intake *
                                 </label>
-                                <select
-                                    v-model="form.semester"
+                                <input
+                                    v-model="form.intake"
+                                    type="text"
                                     class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                                     required
-                                >
-                                    <option value="">Select Semester</option>
-                                    <option v-for="n in 12" :key="n" :value="n">
-                                        Semester {{ n }}
-                                    </option>
-                                </select>
+                                    placeholder="e.g., A"
+                                />
                                 <p
-                                    v-if="form.errors.semester"
+                                    v-if="form.errors.intake"
                                     class="mt-1 text-sm text-red-500"
                                 >
-                                    {{ form.errors.semester }}
+                                    {{ form.errors.intake }}
                                 </p>
                             </div>
+
                             <div>
                                 <label
                                     class="block text-sm font-medium text-gray-700 dark:text-gray-300"
@@ -159,44 +242,3 @@
         </div>
     </AppLayout>
 </template>
-
-<script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft } from 'lucide-vue-next';
-import { computed } from 'vue';
-
-// Import your Wayfinder route definitions
-import classes from '@/routes/admin/classes';
-
-// Generate the index URL
-const classesIndexUrl = computed(() => {
-    return classes.index.url();
-});
-
-// Use Inertia form directly
-const form = useForm({
-    name: '',
-    description: '',
-    subject_code: '',
-    semester: '',
-    section: '',
-});
-
-const submit = () => {
-    // CORRECT WAY: Use the form.post method directly
-    form.post(classes.store.url(), {
-        preserveScroll: true,
-        onSuccess: () => {
-            // Success - redirected by controller
-            console.log('Class created successfully!');
-        },
-        onError: (errors) => {
-            console.error('Form errors:', errors);
-        },
-        onFinish: () => {
-            form.reset();
-        },
-    });
-};
-</script>

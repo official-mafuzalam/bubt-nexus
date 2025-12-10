@@ -21,8 +21,21 @@ class AdminSeeder extends Seeder
                 'password' => bcrypt('password'), // Use bcrypt for hashing passwords
             ]
         );
+        $user->userDetail()->create(
+            [
+                'user_id' => $user->id,
+                'phone' => '0123456789',
+                'program_id' => 1,
+                'semester' => null,
+                'intake' => null,
+                'section' => null,
+                'student_id' => 1111111,
+                'cgpa' => null,
+                
+            ]
+        );
 
         // Assign roles
-        $user->assignRole('super_admin', 'admin', 'user');
+        $user->assignRole('super_admin', 'admin', 'user', 'student');
     }
 }

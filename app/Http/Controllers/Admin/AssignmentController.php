@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Assignment;
+use App\Models\AssignmentSubmission;
 use App\Models\ClassModel;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -193,6 +194,109 @@ class AssignmentController extends Controller
         return back()->with('success', 'Assignment status updated!');
     }
 
+    public function viewSubmission($classId, $assignmentId, $submissionId)
+    {
+        $class = ClassModel::findOrFail($classId);
+        $user = Auth::user();
+
+        // Check if user is faculty member of this class
+        if (!$user->hasRole('faculty') || $class->faculty_id !== $user->id) {
+            abort(403);
+        }
+
+        // Get assignment details with attachments
+        $assignment = Assignment::findOrFail($assignmentId);
+
+        // Get submission with student details
+        $submission = AssignmentSubmission::with('student')
+            ->where('id', $submissionId)
+            ->where('assignment_id', $assignmentId)
+            ->firstOrFail();
+
+        // Format submission attachments with URLs
+        $formattedSubmissionAttachments = [];
+        if ($submission->attachments && is_array($submission->attachments)) {
+            foreach ($submission->attachments as $attachment) {
+                $formattedSubmissionAttachments[] = [
+                    'name' => $attachment['name'] ?? basename($attachment['path']),
+                    'path' => $attachment['path'],
+                    'size' => $attachment['size'] ?? 0,
+                    'url' => Storage::url($attachment['path']),
+                    'original_name' => $attachment['name'] ?? basename($attachment['path']),
+                    'mime_type' => Storage::mimeType($attachment['path']) ?? 'application/octet-stream',
+                ];
+            }
+        }
+
+        // Format assignment attachments with URLs
+        $formattedAssignmentAttachments = [];
+        if ($assignment->attachments && is_array($assignment->attachments)) {
+            foreach ($assignment->attachments as $attachment) {
+                $formattedAssignmentAttachments[] = [
+                    'name' => $attachment['name'] ?? basename($attachment['path']),
+                    'path' => $attachment['path'],
+                    'size' => $attachment['size'] ?? 0,
+                    'url' => Storage::url($attachment['path']),
+                    'original_name' => $attachment['name'] ?? basename($attachment['path']),
+                    'mime_type' => Storage::mimeType($attachment['path']) ?? 'application/octet-stream',
+                ];
+            }
+        }
+
+        // Get next and previous submission IDs for navigation
+        $submissionIds = AssignmentSubmission::where('assignment_id', $assignmentId)
+            ->orderBy('created_at', 'asc')
+            ->pluck('id')
+            ->toArray();
+
+        $currentIndex = array_search($submissionId, $submissionIds);
+        $nextSubmissionId = $submissionIds[$currentIndex + 1] ?? null;
+        $prevSubmissionId = $submissionIds[$currentIndex - 1] ?? null;
+
+        return Inertia::render('admin/Assignments/ViewSubmission', [
+            'classData' => [
+                'id' => (int) $class->id,
+                'name' => (string) $class->name,
+                'subject_code' => (string) $class->subject_code,
+                'semester' => (int) $class->semester,
+                'section' => (string) $class->section,
+            ],
+            'assignment' => [
+                'id' => $assignment->id,
+                'title' => $assignment->title,
+                'description' => $assignment->description,
+                'instructions' => $assignment->instructions,
+                'total_marks' => $assignment->total_marks,
+                'deadline' => $assignment->deadline,
+                'status' => $assignment->status,
+                'attachments' => $formattedAssignmentAttachments,
+            ],
+            'submission' => [
+                'id' => $submission->id,
+                'student' => [
+                    'id' => $submission->student->id,
+                    'name' => $submission->student->name,
+                    'email' => $submission->student->email,
+                    'roll_number' => $submission->student->roll_number ?? null,
+                ],
+                'submitted_at' => $submission->created_at->toISOString(),
+                'updated_at' => $submission->updated_at->toISOString(),
+                'content' => $submission->content,
+                'attachments' => $formattedSubmissionAttachments,
+                'marks_obtained' => $submission->marks_obtained,
+                'feedback' => $submission->feedback,
+                'status' => $submission->status,
+                'late_submission' => $submission->late_submission ?? false,
+            ],
+            'navigation' => [
+                'next_submission_id' => $nextSubmissionId,
+                'prev_submission_id' => $prevSubmissionId,
+                'total_submissions' => count($submissionIds),
+                'current_position' => $currentIndex + 1,
+            ],
+        ]);
+    }
+
     private function checkClassAccess($class, $user)
     {
         if ($user->hasRole('faculty') && $class->faculty_id === $user->id) {
@@ -211,5 +315,34 @@ class AssignmentController extends Controller
         }
 
         abort(403);
+    }
+
+    public function updateSubmission(Request $request, $classId, $assignmentId, $submissionId)
+    {
+        $class = ClassModel::findOrFail($classId);
+        $user = Auth::user();
+
+        // Check if user is faculty member of this class
+        if (!$user->hasRole('faculty') || $class->faculty_id !== $user->id) {
+            abort(403);
+        }
+
+        $submission = AssignmentSubmission::where('id', $submissionId)
+            ->where('assignment_id', $assignmentId)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'marks_obtained' => ['required', 'numeric', 'min:0', 'max:1000'],
+            'feedback' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $submission->update([
+            'marks_obtained' => $validated['marks_obtained'],
+            'feedback' => $validated['feedback'],
+            'status' => 'graded',
+            'graded_at' => now(),
+        ]);
+
+        return back()->with('success', 'Grade updated successfully.');
     }
 }

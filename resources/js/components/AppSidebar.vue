@@ -80,8 +80,8 @@ const mainNavItems = computed(() => {
     // Notes - check role or permission
     if (
         can({
-            roles: ['super_admin', 'admin'],
-            permissions: ['notes_view', 'classes_view' ],
+            roles: ['super_admin', 'admin', 'faculty', 'student'],
+            permissions: ['notes_view', 'classes_view'],
         })
     ) {
         items.push({
@@ -121,7 +121,7 @@ const mainNavItems = computed(() => {
     // Routines - check role or permission
     if (
         can({
-            roles: ['super_admin', 'admin']
+            roles: ['super_admin', 'admin'],
         })
     ) {
         items.push({

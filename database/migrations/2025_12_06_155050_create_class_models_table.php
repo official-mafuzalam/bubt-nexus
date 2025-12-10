@@ -17,7 +17,8 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->foreignId('faculty_id')->constrained('users');
             $table->string('subject_code');
-            $table->integer('semester');
+            $table->foreignId('program_id')->constrained('programs');
+            $table->integer('intake');
             $table->string('section');
             $table->string('enrollment_code')->unique();
             $table->boolean('is_active')->default(true);

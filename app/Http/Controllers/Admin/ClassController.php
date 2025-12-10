@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ClassModel;
 use App\Models\ClassEnrollment;
+use App\Models\Program;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
@@ -45,7 +46,10 @@ class ClassController extends Controller
 
     public function create()
     {
-        return Inertia::render('admin/Classes/Create');
+        $programs = Program::where('is_active', true)->get();
+        return Inertia::render('admin/Classes/Create', [
+            'programs' => $programs,
+        ]);
     }
 
     public function store(Request $request)
@@ -53,8 +57,9 @@ class ClassController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'subject_code' => 'required|string|max:50',
-            'semester' => 'required|integer',
-            'section' => 'required|string|max:10',
+            'program_id' => 'required|integer|exists:programs,id',
+            'intake' => 'required|integer',
+            'section' => 'required|integer',
             'description' => 'nullable|string',
         ]);
 
@@ -64,7 +69,8 @@ class ClassController extends Controller
             'description' => $request->description,
             'faculty_id' => Auth::id(),
             'subject_code' => $request->subject_code,
-            'semester' => $request->semester,
+            'program_id' => $request->program_id,
+            'intake' => $request->intake,
             'section' => $request->section,
             'enrollment_code' => ClassModel::generateEnrollmentCode(),
         ]);

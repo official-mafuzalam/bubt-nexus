@@ -602,6 +602,24 @@ const gradeSubmission = (submissionItem: any) => {
                                                         >
                                                             Grade
                                                         </button>
+                                                        <Link
+                                                            :href="
+                                                                route(
+                                                                    'admin.assignments.submissions.view',
+                                                                    {
+                                                                        class: extractedClassId,
+                                                                        assignment:
+                                                                            safeAssignment.id,
+                                                                        submission:
+                                                                            submissionItem.id,
+                                                                    },
+                                                                )
+                                                            "
+                                                            class="rounded-md bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200"
+                                                            title="View Submission"
+                                                        >
+                                                            View
+                                                        </Link>
                                                     </div>
                                                 </td>
                                             </tr>

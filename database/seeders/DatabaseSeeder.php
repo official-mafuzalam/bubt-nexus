@@ -20,10 +20,10 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
 
+        $this->call(ProgramSeeder::class);
         $this->call(SettingSeeder::class);
         $this->call(RolePermissionSeeder::class);
         $this->call(AdminSeeder::class);
-        $this->call(ProgramSeeder::class);
         // $this->call(AssignmentSeeder::class);
     }
 }

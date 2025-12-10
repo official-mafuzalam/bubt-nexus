@@ -26,6 +26,11 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|stud
 
     Route::get('/', [HomeController::class, 'index'])->name('dashboard');
 
+    // Notes Management Routes
+    Route::get('/notes', [NotesController::class, 'index'])->name('admin.notes.index');
+    Route::post('/notes', [NotesController::class, 'store'])->name('admin.notes.store');
+    Route::delete('/notes/{note}', [NotesController::class, 'destroy'])->name('admin.notes.destroy');
+
     Route::prefix('/classes')->name('admin.')->group(function () {
         // Classes
         Route::get('/', [ClassController::class, 'index'])->name('classes.index');
@@ -40,11 +45,13 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|stud
         Route::post('/{class}/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
         Route::get('/{class}/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
         Route::put('/{class}/assignments/{assignment}/status', [AssignmentController::class, 'updateStatus'])->name('assignments.status');
+        Route::get('/{class}/assignments/{assignment}/submissions/{submission}', [AssignmentController::class, 'viewSubmission'])->name('assignments.submissions.view');
 
         // Submissions
         Route::post('/{class}/assignments/{assignment}/submit', [SubmissionController::class, 'submit'])->name('submissions.submit');
         Route::post('/submissions/{submission}/grade', [SubmissionController::class, 'grade'])->name('submissions.grade');
         Route::get('/submissions/{submission}/download/{index}', [SubmissionController::class, 'downloadAttachment'])->name('submissions.download');
+        Route::put('/classes/{class}/assignments/{assignment}/submissions/{submission}', [AssignmentController::class, 'updateSubmission'])->name('submissions.update');
     });
 
     Route::get('/my-routines', [RoutineController::class, 'myRoutines'])->name('admin.myRoutines');
@@ -58,10 +65,6 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|stud
 
 // Super Admin, Admin, User Dashboard Routes
 Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin-dashboard')->group(function () {
-
-    Route::get('/notes', [NotesController::class, 'index'])->name('admin.notes.index');
-    Route::post('/notes', [NotesController::class, 'store'])->name('admin.notes.store');
-    Route::delete('/notes/{note}', [NotesController::class, 'destroy'])->name('admin.notes.destroy');
 
     Route::prefix('scraper')->group(function () {
         Route::get('/program/{code}', [RoutineScraperController::class, 'scrapeProgram']);
