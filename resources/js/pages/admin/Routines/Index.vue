@@ -369,7 +369,6 @@
                             <TableHead class="font-medium"
                                 >Intake/Section</TableHead
                             >
-                            <TableHead class="font-medium">Semester</TableHead>
                             <TableHead class="font-medium"
                                 >Day & Time</TableHead
                             >
@@ -400,7 +399,7 @@
                                     <div
                                         class="text-xs text-gray-500 dark:text-gray-400"
                                     >
-                                        {{ routine.program.code }}
+                                        {{ routine.semester }}
                                     </div>
                                 </TableCell>
 
@@ -410,15 +409,6 @@
                                         class="font-medium text-gray-900 dark:text-gray-100"
                                     >
                                         {{ routine.intake_full }}
-                                    </div>
-                                </TableCell>
-
-                                <!-- Semester -->
-                                <TableCell>
-                                    <div
-                                        class="text-gray-600 dark:text-gray-400"
-                                    >
-                                        {{ routine.semester }}
                                     </div>
                                 </TableCell>
 
@@ -436,11 +426,11 @@
                                         >
                                             {{ routine.time_slot }}
                                         </div>
-                                        <div
+                                        <!-- <div
                                             class="text-xs text-gray-500 dark:text-gray-400"
                                         >
                                             {{ routine.formatted_time }}
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </TableCell>
 

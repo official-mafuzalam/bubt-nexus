@@ -1,4 +1,3 @@
-<!-- resources/js/Pages/Welcome.vue -->
 <script setup lang="ts">
 import { useSettings } from '@/composables/useSettings';
 import MainLayout from '@/layouts/PublicLayout.vue';

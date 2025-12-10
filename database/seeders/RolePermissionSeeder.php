@@ -20,6 +20,7 @@ class RolePermissionSeeder extends Seeder
             'admin',
             'faculty',
             'student',
+            'class_representative',
             'user'
         ];
         foreach ($roles as $role) {
@@ -27,6 +28,7 @@ class RolePermissionSeeder extends Seeder
         }
 
         $permissions = [
+            'routines_manage',
             'role',
             'permission',
             'user',

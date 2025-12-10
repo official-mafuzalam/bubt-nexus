@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ClassRoutine;
 use App\Models\Program;
+use App\Models\UserDetail;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -118,8 +119,26 @@ class RoutineController extends Controller
      */
     public function create()
     {
-        $programs = Program::where('is_active', true)
-            ->orderBy('name')
+        $user = auth()->user();
+        $userHasRole = $user->hasRole('class_representative');
+
+        // Check permission using Gate or middleware (more Laravel-like)
+        if (!$user->can('routines_manage')) {
+            return redirect()->route('admin.myRoutines')->with('error', 'You do not have permission to create routines.');
+        }
+
+        $userProgramCode = $user->getProgramCodeAttribute();
+        $userIntake = $user->userDetail()->value('intake');
+        $userSection = $user->userDetail()->value('section');
+
+        // Build query based on user's program code
+        $programsQuery = Program::where('is_active', true);
+
+        if (!empty($userProgramCode)) {
+            $programsQuery->where('code', $userProgramCode);
+        }
+
+        $programs = $programsQuery->orderBy('name')
             ->get(['id', 'name', 'code']);
 
         $days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
@@ -237,6 +256,9 @@ class RoutineController extends Controller
             'statuses' => $statuses,
             'timeSlots' => $timeSlots,
             'semesters' => array_keys(\App\Http\Class\Data::getSemesterOptions()),
+            'userHasRole' => $userHasRole,
+            'userIntake' => $userIntake,
+            'userSection' => $userSection,
         ]);
     }
 
@@ -245,6 +267,9 @@ class RoutineController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        $userHasRole = $user->hasRole('class_representative');
+        
         $validated = $request->validate([
             'program_id' => 'required|exists:programs,id',
             'intake' => 'required|integer|min:1',
@@ -291,6 +316,12 @@ class RoutineController extends Controller
             'slot_order' => $validated['slot_order'] ?? 1,
         ]);
 
+        
+        if (!$userHasRole) {
+            return redirect()->route('admin.myRoutines')
+                ->with('success', 'Class routine updated successfully.');
+        }
+
         return redirect()->route('admin.routines.index')
             ->with('success', 'Class routine created successfully.');
     }
@@ -327,6 +358,8 @@ class RoutineController extends Controller
      */
     public function edit(string $id)
     {
+        $user = auth()->user();
+        $userHasRole = $user->hasRole('class_representative');
         $routine = ClassRoutine::findOrFail($id);
 
         $programs = Program::where('is_active', true)
@@ -448,6 +481,7 @@ class RoutineController extends Controller
             'days' => $days,
             'statuses' => $statuses,
             'timeSlots' => $timeSlots,
+            'userHasRole' => $userHasRole,
         ]);
     }
 
@@ -456,6 +490,8 @@ class RoutineController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $user = auth()->user();
+        $userHasRole = $user->hasRole('class_representative');
         $routine = ClassRoutine::findOrFail($id);
 
         $validated = $request->validate([
@@ -503,6 +539,11 @@ class RoutineController extends Controller
             'effective_date' => $validated['effective_date'],
             'slot_order' => $validated['slot_order'] ?? $routine->slot_order,
         ]);
+
+        if (!$userHasRole) {
+            return redirect()->route('admin.myRoutines')
+                ->with('success', 'Class routine updated successfully.');
+        }
 
         return redirect()->route('admin.routines.index')
             ->with('success', 'Class routine updated successfully.');
@@ -653,10 +694,33 @@ class RoutineController extends Controller
     public function myRoutines(Request $request)
     {
         $user = $request->user();
-        $program = $user->UserDetail->program_id;
-        $intake = $user->UserDetail->intake;
-        $section = $user->UserDetail->section;
-        $semester = $user->UserDetail->current_semester;
+
+        $userHasPermission = $request->user()->can('routines_manage');
+
+        $userDetails = UserDetail::where('user_id', $user->id)->first();
+        if (!$userDetails) {
+            return back()->with('error', 'User details not found. Please update your profile.');
+        }
+        $program = $userDetails->program_id;
+        $intake = $userDetails->intake;
+        $section = $userDetails->section;
+        $semester = $userDetails->semester;
+        // Log::info('User Info', [
+        //     'prog' => $program,
+        //     'intake' => $intake,
+        //     'section' => $section,
+        //     'semester' => $semester,
+        // ]);
+
+        if (!$program) {
+            return back()->with('error', 'Your profile is incomplete. Please update your program in your user details.');
+        } elseif (!$intake) {
+            return back()->with('error', 'Your profile is incomplete. Please update your intake in your user details.');
+        } elseif (!$section) {
+            return back()->with('error', 'Your profile is incomplete. Please update your section in your user details.');
+        } elseif (!$semester) {
+            return back()->with('error', 'Your profile is incomplete. Please update your current semester in your user details.');
+        }
 
         $routines = ClassRoutine::where('program_id', $program)
             ->where('intake', $intake)
@@ -666,9 +730,9 @@ class RoutineController extends Controller
             ->orderBy('start_time')
             ->get();
 
-        // Log::info('My Routines', ['user_id' => $user->id, 'program_id' => $program, 'intake' => $intake, 'section' => $section, 'semester' => $semester, 'routines' => $routines, 'routines_count' => $routines->count()]);
         return Inertia::render('admin/Routines/MyRoutines', [
             'routines' => $routines,
+            'userHasPermission' => $userHasPermission,
         ]);
     }
 }

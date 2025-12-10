@@ -6,14 +6,8 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 
 // ✅ Import your route helpers
 import { index as routinesIndex, store } from '@/routes/admin/routines';
-import { watch } from 'vue';
-
-// Breadcrumbs
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: dashboard().url },
-    { title: 'Class Routines', href: routinesIndex().url },
-    { title: 'Create Routine', href: '' },
-];
+import { computed, watch } from 'vue';
+import { route } from 'ziggy-js';
 
 // ✅ Inertia form for creating a routine
 const form = useForm({
@@ -53,7 +47,35 @@ const props = defineProps<{
     days: string[];
     semesters: string[];
     statuses: string[];
+    userHasRole: boolean;
+    userIntake: string;
+    userSection: string;
 }>();
+
+if (props.userHasRole && props.userIntake && props.userSection) {
+    form.intake = props.userIntake;
+    form.section = props.userSection;
+}
+
+// Breadcrumbs
+// Computed breadcrumbs based on userHasRole
+const breadcrumbs = computed(() => {
+    const crumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: dashboard().url },
+    ];
+
+    // If user has role, use myRoutines route
+    if (props.userHasRole) {
+        crumbs.push({ title: 'Class Routines', href: route('admin.myRoutines') });
+    } else {
+        // If user doesn't have role, use the regular routines index
+        crumbs.push({ title: 'Class Routines', href: routinesIndex().url });
+    }
+
+    crumbs.push({ title: 'Create Routine', href: '' });
+
+    return crumbs;
+});
 
 // Default room types
 const roomTypes = [

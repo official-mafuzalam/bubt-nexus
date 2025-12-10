@@ -12,20 +12,22 @@ import {
 import AppLayout from '@/layouts/AppLayout.vue';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import {
     Building,
     Calendar,
     CalendarDays,
     Clock,
     Download,
+    Edit,
     GraduationCap,
-    MapPin,
+    PlusCircle,
     Printer,
     Share2,
     User,
 } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
+import { route } from 'ziggy-js';
 
 // Define props
 const props = defineProps<{
@@ -55,6 +57,7 @@ const props = defineProps<{
         intake_full: string;
         course_teacher_room: string;
     }[];
+    userHasPermission: boolean;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -62,6 +65,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'My Routines', href: '/admin-dashboard/routines/my' }, // Update with your actual route
 ];
 
+// console.log('User Has Permission:', props.userHasPermission);
 // Access routines via props
 const routines = props.routines;
 
@@ -277,6 +281,13 @@ const shareRoutine = () => {
                         <Share2 class="h-4 w-4" />
                         Share
                     </button>
+                    <Link
+                        :href="route('admin.routines.create')"
+                        class="inline-flex items-center gap-2 rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                    >
+                        <PlusCircle class="h-4 w-4" />
+                        Add Routine
+                    </Link>
                 </div>
             </div>
 
@@ -450,9 +461,7 @@ const shareRoutine = () => {
                                                 <span
                                                     class="ml-auto text-sm text-gray-500 dark:text-gray-400"
                                                 >
-                                                    {{
-                                                        dayRoutines.length
-                                                    }}
+                                                    {{ dayRoutines.length }}
                                                     class{{
                                                         dayRoutines.length !== 1
                                                             ? 'es'
@@ -579,19 +588,33 @@ const shareRoutine = () => {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <span
-                                                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize"
-                                                :class="{
-                                                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
-                                                        routine.status ===
-                                                        'active',
-                                                    'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
-                                                        routine.status ===
-                                                        'inactive',
-                                                }"
-                                            >
-                                                {{ routine.status }}
-                                            </span>
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize"
+                                                    :class="{
+                                                        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
+                                                            routine.status ===
+                                                            'active',
+                                                        'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
+                                                            routine.status ===
+                                                            'inactive',
+                                                    }"
+                                                >
+                                                    {{ routine.status }}
+                                                </span>
+                                                <Link
+                                                    :href="
+                                                        route(
+                                                            'admin.routines.edit',
+                                                            routine.id,
+                                                        )
+                                                    "
+                                                    class="rounded p-1.5 text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                                                    title="Edit Routine"
+                                                >
+                                                    <Edit class="h-4 w-4" />
+                                                </Link>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 </template>

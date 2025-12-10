@@ -21,7 +21,8 @@ import {
     Home,
     XCircle,
 } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { route } from 'ziggy-js';
 
 // ✅ Receive routine data from Laravel
 const props = defineProps<{
@@ -61,13 +62,29 @@ const props = defineProps<{
     }>;
     days: string[];
     statuses: string[];
+    userHasRole: boolean;
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: dashboard().url },
-    { title: 'Class Routines', href: routinesIndex().url },
-    { title: 'Edit Routine', href: '#' },
-];
+const breadcrumbs = computed(() => {
+    const crumbs: BreadcrumbItem[] = [
+        { title: 'Dashboard', href: dashboard().url },
+    ];
+
+    // If user has role, use myRoutines route
+    if (props.userHasRole) {
+        crumbs.push({
+            title: 'Class Routines',
+            href: route('admin.myRoutines'),
+        });
+    } else {
+        // If user doesn't have role, use the regular routines index
+        crumbs.push({ title: 'Class Routines', href: routinesIndex().url });
+    }
+
+    crumbs.push({ title: 'Edit Routine', href: '' });
+
+    return crumbs;
+});
 
 // ✅ Inertia form for editing a routine
 const form = useForm({
@@ -250,6 +267,7 @@ function formatDate(dateString: string | null) {
                                     Program *
                                 </label>
                                 <select
+                                    :disabled="!userHasRole"
                                     v-model="form.program_id"
                                     required
                                     class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
@@ -278,6 +296,7 @@ function formatDate(dateString: string | null) {
                                     Intake *
                                 </label>
                                 <input
+                                    :disabled="!userHasRole"
                                     v-model="form.intake"
                                     type="number"
                                     required
@@ -300,6 +319,7 @@ function formatDate(dateString: string | null) {
                                     Section *
                                 </label>
                                 <input
+                                    :disabled="!userHasRole"
                                     v-model="form.section"
                                     type="number"
                                     required
@@ -322,6 +342,7 @@ function formatDate(dateString: string | null) {
                                     Semester *
                                 </label>
                                 <input
+                                    :disabled="!userHasRole"
                                     v-model="form.semester"
                                     type="text"
                                     required
