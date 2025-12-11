@@ -11,7 +11,8 @@ class Note extends Model
 
     protected $fillable = [
         'user_id',
-        'course_id',
+        'course_name',  // Added: Missing in your model
+        'course_code',  // Added: Missing in your model
         'title',
         'file_url',
         'storage_path',
@@ -19,8 +20,13 @@ class Note extends Model
         'file_size',
     ];
 
+    // Optional: Cast file_size to integer for better type handling
+    protected $casts = [
+        'file_size' => 'integer',
+    ];
+
     public function user()
     {
-        return $this->belongsTo(\App\Models\User::class);
+        return $this->belongsTo(User::class);
     }
 }

@@ -20,6 +20,7 @@ import {
     ChevronDown,
     Key,
     LayoutGrid,
+    Notebook,
     Settings,
     Shield,
     Users,
@@ -87,7 +88,7 @@ const mainNavItems = computed(() => {
         items.push({
             title: 'Notes',
             href: route('admin.notes.index'),
-            icon: Users,
+            icon: Notebook,
             routeName: 'admin.notes.index',
         });
         items.push({

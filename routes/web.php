@@ -27,9 +27,10 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|stud
     Route::get('/', [HomeController::class, 'index'])->name('dashboard');
 
     // Notes Management Routes
-    Route::get('/notes', [NotesController::class, 'index'])->name('admin.notes.index');
-    Route::post('/notes', [NotesController::class, 'store'])->name('admin.notes.store');
-    Route::delete('/notes/{note}', [NotesController::class, 'destroy'])->name('admin.notes.destroy');
+    Route::resource('notes', NotesController::class)->names('admin.notes');
+    Route::get('notes/{note}/download', [NotesController::class, 'download'])->name('admin.notes.download');
+    Route::get('notes/export', [NotesController::class, 'export'])->name('admin.notes.export');
+    Route::post('notes/bulk-delete', [NotesController::class, 'bulkDelete'])->name('admin.notes.bulk-delete');
 
     Route::prefix('/classes')->name('admin.')->group(function () {
         // Classes

@@ -10,7 +10,8 @@ return new class extends Migration {
         Schema::create('notes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->unsignedBigInteger('course_id')->nullable();
+            $table->string('course_name')->nullable();
+            $table->string('course_code')->nullable();
             $table->string('title');
             $table->string('file_url');      // full public URL (on Firebase)
             $table->string('storage_path');  // path inside bucket (notes/... )
