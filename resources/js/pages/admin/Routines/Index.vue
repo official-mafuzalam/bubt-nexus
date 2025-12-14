@@ -1,3 +1,250 @@
+
+<script setup lang="ts">
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
+import {
+    create,
+    destroy,
+    edit,
+    exportMethod as exportRoute,
+    index as routinesIndex,
+    show,
+    bulkCreate
+} from '@/routes/admin/routines';
+import { type BreadcrumbItem } from '@/types';
+import { Head, Link, router } from '@inertiajs/vue3';
+import {
+    Building,
+    Calendar,
+    ChevronDown,
+    Clock,
+    Download,
+    Edit,
+    Eye,
+    Filter,
+    Plus,
+    Trash,
+    User,
+    Users,
+    X,
+} from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
+import { route } from 'ziggy-js';
+
+// ✅ Receive data from Laravel (Inertia props) with optional chaining
+const props = defineProps<{
+    routines?: {
+        data: {
+            id: number;
+            program: {
+                id: number;
+                name: string;
+                code: string;
+            };
+            intake: number;
+            section: number;
+            semester: string;
+            day: string;
+            time_slot: string;
+            start_time: string;
+            end_time: string;
+            course_code: string;
+            course_name: string | null;
+            teacher_code: string;
+            teacher_name: string | null;
+            room_number: string;
+            room_type: string;
+            class_details: string;
+            status: 'active' | 'cancelled' | 'rescheduled';
+            effective_date: string | null;
+            slot_order: number;
+            formatted_time: string;
+            intake_full: string;
+            course_teacher_room: string;
+            is_currently_active: boolean;
+        }[];
+        links: any[];
+        meta: any;
+    };
+    programs: Array<{
+        id: number;
+        name: string;
+        code: string;
+    }>;
+    filters: {
+        program_id: string | null;
+        intake: string | null;
+        section: string | null;
+        semester: string | null;
+        day: string | null;
+        teacher_code: string | null;
+        course_code: string | null;
+        room_number: string | null;
+        status: string;
+    };
+    filterOptions: {
+        intakes: string[];
+        sections: number[];
+        semesters: string[];
+        days: string[];
+        teacher_codes: string[];
+        course_codes: string[];
+        room_numbers: string[];
+        statuses: string[];
+    };
+    stats: {
+        total_routines: number;
+        active_routines: number;
+        programs_with_routines: number;
+        unique_intakes: number;
+    };
+}>();
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: dashboard().url },
+    { title: 'Class Routines', href: routinesIndex().url },
+];
+
+// Local filters state with safe defaults
+const localFilters = ref({
+    program_id: props.filters?.program_id ?? '',
+    intake: props.filters?.intake ?? '',
+    section: props.filters?.section ?? '',
+    semester: props.filters?.semester ?? '',
+    day: props.filters?.day ?? '',
+    teacher_code: props.filters?.teacher_code ?? '',
+    course_code: props.filters?.course_code ?? '',
+    room_number: props.filters?.room_number ?? '',
+    status: props.filters?.status ?? 'active',
+});
+
+const showFilters = ref(false);
+
+// Calculate stats from props with defaults
+const totalRoutines = props.stats?.total_routines ?? 0;
+const activeRoutines = props.stats?.active_routines ?? 0;
+const programsWithRoutines = props.stats?.programs_with_routines ?? 0;
+const uniqueIntakes = props.stats?.unique_intakes ?? 0;
+
+// ✅ Apply filters
+const applyFilters = () => {
+    router.get(routinesIndex().url, localFilters.value, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+// ✅ Reset filters
+const resetFilters = () => {
+    localFilters.value = {
+        program_id: '',
+        intake: '',
+        section: '',
+        semester: '',
+        day: '',
+        teacher_code: '',
+        course_code: '',
+        room_number: '',
+        status: 'active',
+    };
+    applyFilters();
+};
+
+// ✅ Watch for filter changes
+watch(
+    localFilters,
+    () => {
+        applyFilters();
+    },
+    { deep: true, immediate: false },
+);
+
+// ✅ Status badge classes
+function getStatusClasses(status: string) {
+    return {
+        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
+            status === 'active',
+        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200':
+            status === 'cancelled',
+        'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200':
+            status === 'rescheduled',
+    };
+}
+
+// ✅ Room type badge classes
+function getRoomTypeClasses(roomType: string) {
+    return {
+        'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200':
+            roomType === 'Classroom',
+        'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200':
+            roomType === 'Lab',
+        'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200':
+            roomType === 'Auditorium',
+        'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
+            !roomType,
+    };
+}
+
+// ✅ Day badge classes
+function getDayClasses(day: string) {
+    const dayColors: Record<string, string> = {
+        MON: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+        TUE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        WED: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+        THU: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+        FRI: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+        SAT: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+        SUN: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+    };
+    return (
+        dayColors[day] ||
+        'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+    );
+}
+
+// ✅ Delete routine handler
+const deleteRoutine = (routineId: number) => {
+    if (confirm('Are you sure you want to delete this routine?')) {
+        router.delete(destroy(routineId), {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Show success message
+            },
+        });
+    }
+};
+
+// ✅ Get filtered options based on selected program
+const filteredSections = computed(() => {
+    if (!localFilters.value.program_id && !localFilters.value.intake) {
+        return props.filterOptions?.sections ?? [];
+    }
+    return props.filterOptions?.sections ?? [];
+});
+
+// ✅ Export routines
+const exportRoutines = () => {
+    const params = new URLSearchParams();
+    Object.entries(localFilters.value).forEach(([key, value]) => {
+        if (value) {
+            params.append(key, value.toString());
+        }
+    });
+
+    window.location.href = `${exportRoute().url}?${params.toString()}`;
+};
+</script>
+
 <template>
     <Head title="Class Routines" />
 
@@ -39,6 +286,13 @@
                             :class="{ 'rotate-180': showFilters }"
                         />
                     </button>
+                    <Link
+                        :href="bulkCreate()"
+                        class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    >
+                        <Plus class="h-4 w-4" />
+                        Bulk Create
+                    </Link>
                     <Link
                         :href="create()"
                         class="inline-flex items-center gap-2 rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-400 focus:outline-none"
@@ -568,7 +822,12 @@
 
             <!-- Pagination - Fixed with null checks -->
             <div
-                v-if="routines?.data?.length > 0 && routines?.meta"
+                v-if="
+                    routines &&
+                    routines.data &&
+                    routines.data.length > 0 &&
+                    routines.meta
+                "
                 class="flex items-center justify-between"
             >
                 <div class="text-sm text-gray-700 dark:text-gray-300">
@@ -598,250 +857,6 @@
         </div>
     </AppLayout>
 </template>
-
-<script setup lang="ts">
-import {
-    Table,
-    TableBody,
-    TableCaption,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { dashboard } from '@/routes';
-import {
-    create,
-    destroy,
-    edit,
-    exportMethod as exportRoute,
-    index as routinesIndex,
-    show,
-} from '@/routes/admin/routines';
-import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/vue3';
-import {
-    Building,
-    Calendar,
-    ChevronDown,
-    Clock,
-    Download,
-    Edit,
-    Eye,
-    Filter,
-    Plus,
-    Trash,
-    User,
-    Users,
-    X,
-} from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
-
-// ✅ Receive data from Laravel (Inertia props) with optional chaining
-const props = defineProps<{
-    routines?: {
-        data: {
-            id: number;
-            program: {
-                id: number;
-                name: string;
-                code: string;
-            };
-            intake: number;
-            section: number;
-            semester: string;
-            day: string;
-            time_slot: string;
-            start_time: string;
-            end_time: string;
-            course_code: string;
-            course_name: string | null;
-            teacher_code: string;
-            teacher_name: string | null;
-            room_number: string;
-            room_type: string;
-            class_details: string;
-            status: 'active' | 'cancelled' | 'rescheduled';
-            effective_date: string | null;
-            slot_order: number;
-            formatted_time: string;
-            intake_full: string;
-            course_teacher_room: string;
-            is_currently_active: boolean;
-        }[];
-        links: any[];
-        meta: any;
-    };
-    programs: Array<{
-        id: number;
-        name: string;
-        code: string;
-    }>;
-    filters: {
-        program_id: string | null;
-        intake: string | null;
-        section: string | null;
-        semester: string | null;
-        day: string | null;
-        teacher_code: string | null;
-        course_code: string | null;
-        room_number: string | null;
-        status: string;
-    };
-    filterOptions: {
-        intakes: string[];
-        sections: number[];
-        semesters: string[];
-        days: string[];
-        teacher_codes: string[];
-        course_codes: string[];
-        room_numbers: string[];
-        statuses: string[];
-    };
-    stats: {
-        total_routines: number;
-        active_routines: number;
-        programs_with_routines: number;
-        unique_intakes: number;
-    };
-}>();
-
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: dashboard().url },
-    { title: 'Class Routines', href: routinesIndex().url },
-];
-
-// Local filters state with safe defaults
-const localFilters = ref({
-    program_id: props.filters?.program_id ?? '',
-    intake: props.filters?.intake ?? '',
-    section: props.filters?.section ?? '',
-    semester: props.filters?.semester ?? '',
-    day: props.filters?.day ?? '',
-    teacher_code: props.filters?.teacher_code ?? '',
-    course_code: props.filters?.course_code ?? '',
-    room_number: props.filters?.room_number ?? '',
-    status: props.filters?.status ?? 'active',
-});
-
-const showFilters = ref(false);
-
-// Calculate stats from props with defaults
-const totalRoutines = props.stats?.total_routines ?? 0;
-const activeRoutines = props.stats?.active_routines ?? 0;
-const programsWithRoutines = props.stats?.programs_with_routines ?? 0;
-const uniqueIntakes = props.stats?.unique_intakes ?? 0;
-
-// ✅ Apply filters
-const applyFilters = () => {
-    router.get(routinesIndex().url, localFilters.value, {
-        preserveState: true,
-        preserveScroll: true,
-        replace: true,
-    });
-};
-
-// ✅ Reset filters
-const resetFilters = () => {
-    localFilters.value = {
-        program_id: '',
-        intake: '',
-        section: '',
-        semester: '',
-        day: '',
-        teacher_code: '',
-        course_code: '',
-        room_number: '',
-        status: 'active',
-    };
-    applyFilters();
-};
-
-// ✅ Watch for filter changes
-watch(
-    localFilters,
-    () => {
-        applyFilters();
-    },
-    { deep: true, immediate: false },
-);
-
-// ✅ Status badge classes
-function getStatusClasses(status: string) {
-    return {
-        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200':
-            status === 'active',
-        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200':
-            status === 'cancelled',
-        'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200':
-            status === 'rescheduled',
-    };
-}
-
-// ✅ Room type badge classes
-function getRoomTypeClasses(roomType: string) {
-    return {
-        'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200':
-            roomType === 'Classroom',
-        'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200':
-            roomType === 'Lab',
-        'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200':
-            roomType === 'Auditorium',
-        'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200':
-            !roomType,
-    };
-}
-
-// ✅ Day badge classes
-function getDayClasses(day: string) {
-    const dayColors: Record<string, string> = {
-        MON: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-        TUE: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-        WED: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-        THU: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-        FRI: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-        SAT: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-        SUN: 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
-    };
-    return (
-        dayColors[day] ||
-        'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-    );
-}
-
-// ✅ Delete routine handler
-const deleteRoutine = (routineId: number) => {
-    if (confirm('Are you sure you want to delete this routine?')) {
-        router.delete(destroy(routineId), {
-            preserveScroll: true,
-            onSuccess: () => {
-                // Show success message
-            },
-        });
-    }
-};
-
-// ✅ Get filtered options based on selected program
-const filteredSections = computed(() => {
-    if (!localFilters.value.program_id && !localFilters.value.intake) {
-        return props.filterOptions?.sections ?? [];
-    }
-    return props.filterOptions?.sections ?? [];
-});
-
-// ✅ Export routines
-const exportRoutines = () => {
-    const params = new URLSearchParams();
-    Object.entries(localFilters.value).forEach(([key, value]) => {
-        if (value) {
-            params.append(key, value.toString());
-        }
-    });
-
-    window.location.href = `${exportRoute().url}?${params.toString()}`;
-};
-</script>
 
 <style scoped>
 /* Smooth transitions */

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ClassController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\NotesController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\RentController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RoutineController;
 use App\Http\Controllers\Admin\RoutineScraperController;
@@ -59,16 +60,23 @@ Route::middleware(['auth', 'verified', 'role:super_admin|admin|user|faculty|stud
 
     // Routine Management Routes
     Route::resource('routines', RoutineController::class)->names('admin.routines');
+    Route::get('routines/bulk-create', [RoutineController::class, 'bulkCreate'])->name('admin.routines.bulk-create');
     Route::post('routines/bulk-destroy', [RoutineController::class, 'bulkDestroy'])->name('admin.routines.bulk-destroy');
     Route::get('routines/export', [RoutineController::class, 'export'])->name('admin.routines.export');
     Route::get('routines/filter-options', [RoutineController::class, 'getFilterOptions'])->name('admin.routines.filter-options');
+
+    Route::resource('rent', RentController::class)->names('admin.rent-posts');
+    Route::patch('/rent-posts/{rentPost}/toggle-availability', [RentController::class, 'toggleAvailability'])->name('admin.rent-posts.toggle-availability');
+    Route::get('/my-rent-posts', [RentController::class, 'myPosts'])->name('admin.rent-posts.my-posts');
+
+
 });
 
 // Super Admin, Admin, User Dashboard Routes
 Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->prefix('admin-dashboard')->group(function () {
 
     Route::prefix('scraper')->group(function () {
-        Route::get('/program/{code}', [RoutineScraperController::class, 'scrapeProgram']);
+        Route::get('/program/{code}', [RoutineScraperController::class, 'scrapeProgram'])->name('admin.scraper.program.scrape');
         Route::get('/status', [RoutineScraperController::class, 'getStatus']);
     });
 

@@ -1,29 +1,78 @@
-<template>
-    <AppLayout>
-        <div class="container mx-auto px-4 py-8">
-            <!-- Header -->
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-                    My Classes
-                </h1>
-                <p class="mt-2 text-gray-600 dark:text-gray-400">
-                    {{
-                        userType === 'faculty'
-                            ? 'Manage your classes and assignments'
-                            : 'Browse and join classes'
-                    }}
-                </p>
-            </div>
+<script setup lang="ts">
+import ClassCard from '@/components/classes/ClassCard.vue';
+import EnrollmentForm from '@/components/classes/EnrollmentForm.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { Link } from '@inertiajs/vue3';
+import { Plus, Users } from 'lucide-vue-next';
+import { computed } from 'vue';
 
-            <!-- Create Class Button (Faculty only) -->
-            <div v-if="userType === 'faculty'" class="mb-6">
-                <Link
-                    :href="classes.create.url()"
-                    class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-400 focus:outline-none"
-                >
-                    <Plus class="h-4 w-4" />
-                    Create New Class
-                </Link>
+// Import your Wayfinder route definitions - make sure this is the correct path
+import classes from '@/routes/admin/classes'; // Or '@/routes/admin/classes'
+import { BreadcrumbItem } from '@/types';
+import { route } from 'ziggy-js';
+
+interface Props {
+    classes?: {
+        data: any[];
+        links: any[];
+    };
+    userType?: 'faculty' | 'student';
+}
+
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: route('dashboard') },
+    { title: 'Class Management', href: route('admin.classes.index') },
+];
+
+const props = withDefaults(defineProps<Props>(), {
+    classes: undefined,
+    userType: 'student',
+});
+
+// Safe computed properties
+const safeClasses = computed(() => {
+    return props.classes || { data: [], links: [] };
+});
+
+const hasClasses = computed(() => {
+    return safeClasses.value.data && safeClasses.value.data.length > 0;
+});
+</script>
+
+<template>
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div
+            class="flex flex-col gap-4 rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
+        >
+            <div
+                class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
+            >
+                <!-- Header -->
+                <div class="mb-8">
+                    <h1
+                        class="text-3xl font-bold text-gray-900 dark:text-white"
+                    >
+                        My Classes
+                    </h1>
+                    <p class="mt-2 text-gray-600 dark:text-gray-400">
+                        {{
+                            userType === 'faculty'
+                                ? 'Manage your classes and assignments'
+                                : 'Browse and join classes'
+                        }}
+                    </p>
+                </div>
+
+                <!-- Create Class Button (Faculty only) -->
+                <div v-if="userType === 'faculty'" class="mb-6">
+                    <Link
+                        :href="classes.create.url()"
+                        class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-400 focus:outline-none"
+                    >
+                        <Plus class="h-4 w-4" />
+                        Create New Class
+                    </Link>
+                </div>
             </div>
 
             <!-- Join Class Form (Student only) -->
@@ -66,37 +115,3 @@
         </div>
     </AppLayout>
 </template>
-
-<script setup lang="ts">
-import ClassCard from '@/components/classes/ClassCard.vue';
-import EnrollmentForm from '@/components/classes/EnrollmentForm.vue';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Link } from '@inertiajs/vue3';
-import { Plus, Users } from 'lucide-vue-next';
-import { computed } from 'vue';
-
-// Import your Wayfinder route definitions - make sure this is the correct path
-import classes from '@/routes/admin/classes'; // Or '@/routes/admin/classes'
-
-interface Props {
-    classes?: {
-        data: any[];
-        links: any[];
-    };
-    userType?: 'faculty' | 'student';
-}
-
-const props = withDefaults(defineProps<Props>(), {
-    classes: undefined,
-    userType: 'student',
-});
-
-// Safe computed properties
-const safeClasses = computed(() => {
-    return props.classes || { data: [], links: [] };
-});
-
-const hasClasses = computed(() => {
-    return safeClasses.value.data && safeClasses.value.data.length > 0;
-});
-</script>

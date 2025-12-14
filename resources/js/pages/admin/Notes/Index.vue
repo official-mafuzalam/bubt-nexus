@@ -609,7 +609,9 @@ const exportNotes = () => {
 
             <!-- Pagination -->
             <div
-                v-if="notes?.data?.length > 0 && notes?.meta"
+                v-if="
+                    notes && notes.data && notes.data.length > 0 && notes.meta
+                "
                 class="flex items-center justify-between"
             >
                 <div class="text-sm text-gray-700 dark:text-gray-300">

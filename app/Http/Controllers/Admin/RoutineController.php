@@ -270,7 +270,7 @@ class RoutineController extends Controller
     {
         $user = auth()->user();
         $userHasRole = $user->hasRole('class_representative');
-        
+
         $validated = $request->validate([
             'program_id' => 'required|exists:programs,id',
             'intake' => 'required|integer|min:1',
@@ -317,7 +317,7 @@ class RoutineController extends Controller
             'slot_order' => $validated['slot_order'] ?? 1,
         ]);
 
-        
+
         if (!$userHasRole) {
             return redirect()->route('admin.myRoutines')
                 ->with('success', 'Class routine updated successfully.');
@@ -560,6 +560,16 @@ class RoutineController extends Controller
 
         return redirect()->route('admin.routines.index')
             ->with('success', 'Class routine deleted successfully.');
+    }
+
+    public function bulkCreate()
+    {
+        $programs = Program::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+        return Inertia::render('admin/Routines/BulkCreate', [
+            'programs' => $programs,
+        ]);
     }
 
     /**

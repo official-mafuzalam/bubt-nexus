@@ -102,6 +102,12 @@ const mainNavItems = computed(() => {
                 'admin.submissions',
             ],
         });
+        items.push({
+            title: 'To-Let Posts',
+            href: route('admin.rent-posts.index'),
+            icon: Building,
+            routeName: ['admin.rent-posts.index', 'admin.rent-posts'],
+        });
     }
 
     // Routines - check role or permission
