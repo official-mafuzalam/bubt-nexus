@@ -48,7 +48,7 @@ class RoutineScraperController extends Controller
                 ], 404);
             }
 
-            $url = $this->baseUrl . "?p={$programCode}&semNo=611";
+            $url = $this->baseUrl . "?p={$programCode}&semNo=066";
             Log::info("Fetching URL: {$url}");
 
             $response = $this->client->get($url);
