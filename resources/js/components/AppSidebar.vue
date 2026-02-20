@@ -16,6 +16,7 @@ import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import {
     ArrowUpRightFromSquare,
+    BookOpen,
     Building,
     ChevronDown,
     Key,
@@ -136,6 +137,12 @@ const mainNavItems = computed(() => {
             href: route('admin.routines.index'),
             icon: LayoutGrid,
             routeName: ['admin.routines.index', 'admin.routines'],
+        });
+        items.push({
+            title: 'Programs Management',
+            href: route('admin.programs.index'),
+            icon: BookOpen,
+            routeName: ['admin.programs.index', 'admin.programs'],
         });
     }
 

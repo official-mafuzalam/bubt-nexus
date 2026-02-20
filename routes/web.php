@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ClassController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\NotesController;
 use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\ProgramController;
 use App\Http\Controllers\Admin\RentController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RoutineController;
@@ -75,6 +76,9 @@ Route::prefix('admin-dashboard')->group(function () {
 
     // Super Admin, Admin, User Dashboard Routes
     Route::middleware(['auth', 'verified', 'role:super_admin|admin'])->group(function () {
+
+        Route::resource('programs', ProgramController::class)->names('admin.programs');
+
 
         Route::prefix('scraper')->group(function () {
             Route::get('/program/{code}', [RoutineScraperController::class, 'scrapeProgram'])->name('admin.scraper.program.scrape');
