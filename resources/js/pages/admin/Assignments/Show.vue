@@ -2,8 +2,16 @@
 import SubmissionForm from '@/components/assignments/SubmissionForm.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Link, router } from '@inertiajs/vue3';
-import { ArrowLeft, User } from 'lucide-vue-next';
-import { computed } from 'vue';
+import {
+    ArrowLeft,
+    Download,
+    Edit,
+    Eye,
+    FileText,
+    User,
+    X,
+} from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 
 // Import your Wayfinder route definitions
 import { route } from 'ziggy-js';
@@ -15,6 +23,72 @@ const props = defineProps<{
     submission?: any;
     allSubmissions?: any; // Could be paginator object or array
 }>();
+
+// Preview modal state
+const showPreviewModal = ref(false);
+const previewAttachment = ref<any>(null);
+const previewLoading = ref(true);
+const textFileContent = ref('');
+
+// File type detection functions
+const isImageFile = (filename: string, type?: string): boolean => {
+    if (type?.includes('image')) return true;
+    const extensions = [
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.gif',
+        '.bmp',
+        '.svg',
+        '.webp',
+    ];
+    return extensions.some((ext) => filename?.toLowerCase().endsWith(ext));
+};
+
+const isPdfFile = (filename: string, type?: string): boolean => {
+    if (type?.includes('pdf')) return true;
+    return filename?.toLowerCase().endsWith('.pdf');
+};
+
+// Plain text and code files that browsers can actually read
+const isTextFile = (filename: string, type?: string): boolean => {
+    if (type?.includes('text/plain') || type?.includes('application/json'))
+        return true;
+    const textExtensions = [
+        '.txt',
+        '.csv',
+        '.json',
+        '.xml',
+        '.html',
+        '.css',
+        '.js',
+        '.ts',
+        '.php',
+        '.vue',
+        '.md',
+        '.sql',
+        '.log',
+    ];
+    return textExtensions.some((ext) => filename?.toLowerCase().endsWith(ext));
+};
+
+const isVideoFile = (filename: string, type?: string): boolean => {
+    if (type?.includes('video')) return true;
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
+    return videoExtensions.some((ext) => filename?.toLowerCase().endsWith(ext));
+};
+
+const isAudioFile = (filename: string, type?: string): boolean => {
+    if (type?.includes('audio')) return true;
+    const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.flac'];
+    return audioExtensions.some((ext) => filename?.toLowerCase().endsWith(ext));
+};
+
+// Handle preview errors
+const handlePreviewError = () => {
+    previewLoading.value = false;
+    console.error('Failed to load preview for:', previewAttachment.value?.name);
+};
 
 // Extract IDs from URL as fallback
 const extractClassIdFromUrl = (): number => {
@@ -45,6 +119,16 @@ const extractedAssignmentId = computed(() => extractAssignmentIdFromUrl());
 // Safe computed properties
 const safeAssignment = computed(() => {
     if (props.assignment && typeof props.assignment === 'object') {
+        // Parse attachments if they're stored as JSON string
+        let attachments = props.assignment.attachments || [];
+        if (typeof attachments === 'string') {
+            try {
+                attachments = JSON.parse(attachments);
+            } catch (e) {
+                attachments = [];
+            }
+        }
+
         return {
             id: props.assignment.id || extractedAssignmentId.value,
             title: props.assignment.title || 'Untitled Assignment',
@@ -53,7 +137,7 @@ const safeAssignment = computed(() => {
             total_marks: props.assignment.total_marks || 0,
             deadline: props.assignment.deadline || '',
             status: props.assignment.status || 'draft',
-            attachments: props.assignment.attachments || [],
+            attachments: attachments,
             submissions_count: props.assignment.submissions_count || 0,
         };
     }
@@ -78,22 +162,79 @@ const submission = computed(() => {
     return null;
 });
 
+// Format file size
+const formatFileSize = (bytes: number): string => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
+
+// Get file icon component based on type
+const getFileIcon = (type: string, filename: string) => {
+    if (isImageFile(filename, type)) return FileText;
+    if (isPdfFile(filename, type)) return FileText;
+    if (isTextFile(filename, type)) return FileText;
+    if (isVideoFile(filename, type)) return FileText;
+    if (isAudioFile(filename, type)) return FileText;
+    return FileText;
+};
+
+// Main check: Should we even show the preview button?
+const canPreview = (filename: string, type?: string): boolean => {
+    return (
+        isImageFile(filename, type) ||
+        isPdfFile(filename, type) ||
+        isTextFile(filename, type)
+    );
+};
+
+// Open preview modal
+const openPreview = (attachment: any) => {
+    if (!canPreview(attachment.name, attachment.type)) return;
+
+    previewAttachment.value = attachment;
+    showPreviewModal.value = true;
+    previewLoading.value = true;
+
+    if (isTextFile(attachment.name, attachment.type)) {
+        fetch(attachment.url || `/storage/${attachment.path}`)
+            .then((response) => response.text())
+            .then((text) => {
+                textFileContent.value = text;
+                previewLoading.value = false;
+            })
+            .catch(() => {
+                textFileContent.value = 'Error loading file content.';
+                previewLoading.value = false;
+            });
+    } else {
+        // Images and PDFs load via browser native elements
+        previewLoading.value = false;
+    }
+};
+
+// Close preview modal
+const closePreview = () => {
+    showPreviewModal.value = false;
+    previewAttachment.value = null;
+    textFileContent.value = '';
+    previewLoading.value = true;
+};
+
 const safeAllSubmissionsData = computed(() => {
     if (!props.allSubmissions) return [];
 
-    // If it's a paginator with data property
     if (props.allSubmissions.data) {
         return props.allSubmissions.data;
     }
 
-    // If it's directly an array
     if (Array.isArray(props.allSubmissions)) {
         return props.allSubmissions;
     }
 
-    // If it's an object, try to extract data
     if (typeof props.allSubmissions === 'object') {
-        // Try common paginator formats
         if (
             'Illuminate\\Pagination\\LengthAwarePaginator' in
             props.allSubmissions
@@ -112,6 +253,13 @@ const safeAllSubmissionsData = computed(() => {
 // Generate URLs using extracted IDs
 const assignmentsIndexUrl = computed(() => {
     return route('admin.assignments.index', { class: extractedClassId.value });
+});
+
+const editAssignmentUrl = computed(() => {
+    return route('admin.assignments.edit', {
+        class: extractedClassId.value,
+        assignment: safeAssignment.value.id,
+    });
 });
 
 const statusClasses = computed(() => {
@@ -217,18 +365,12 @@ const toggleAssignmentStatus = () => {
 };
 
 const handleSubmission = () => {
-    // Refresh the page to show updated submission
     router.reload({ preserveScroll: true });
 };
 
 const gradeSubmission = (submissionItem: any) => {
-    // You'll need to implement grading functionality
     console.log('Grade submission:', submissionItem);
-    // This would typically open a modal or navigate to a grading page
 };
-
-// Note: Removed breadcrumbs for now since they rely on classData.name
-// which might not be available due to the string issue
 </script>
 
 <template>
@@ -267,6 +409,15 @@ const gradeSubmission = (submissionItem: any) => {
                             </h1>
                         </div>
                         <div v-if="isFaculty" class="flex gap-2">
+                            <!-- Edit Button -->
+                            <Link
+                                :href="editAssignmentUrl"
+                                class="inline-flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                            >
+                                <Edit class="h-4 w-4" />
+                                Edit
+                            </Link>
+                            <!-- Status Toggle Button -->
                             <button
                                 @click="toggleAssignmentStatus"
                                 class="rounded-md px-4 py-2 text-sm font-medium"
@@ -336,6 +487,96 @@ const gradeSubmission = (submissionItem: any) => {
                                 </div>
                             </div>
 
+                            <!-- Assignment Attachments with Preview -->
+                            <div
+                                v-if="
+                                    safeAssignment.attachments &&
+                                    safeAssignment.attachments.length
+                                "
+                                class="mb-6"
+                            >
+                                <h4
+                                    class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300"
+                                >
+                                    Attachments ({{
+                                        safeAssignment.attachments.length
+                                    }})
+                                </h4>
+                                <div class="space-y-2">
+                                    <div
+                                        v-for="(
+                                            attachment, index
+                                        ) in safeAssignment.attachments"
+                                        :key="index"
+                                        class="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800"
+                                    >
+                                        <div
+                                            class="flex flex-1 items-center gap-3"
+                                        >
+                                            <!-- File Icon -->
+                                            <div
+                                                class="rounded-md bg-blue-100 p-2 dark:bg-blue-900"
+                                            >
+                                                <FileText
+                                                    class="h-5 w-5 text-blue-600 dark:text-blue-400"
+                                                />
+                                            </div>
+
+                                            <!-- File Info -->
+                                            <div class="flex-1">
+                                                <p
+                                                    class="text-sm font-medium text-gray-900 dark:text-white"
+                                                >
+                                                    {{ attachment.name }}
+                                                </p>
+                                                <p
+                                                    class="text-xs text-gray-500 dark:text-gray-400"
+                                                >
+                                                    {{
+                                                        formatFileSize(
+                                                            attachment.size,
+                                                        )
+                                                    }}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Action Buttons -->
+                                        <!-- Action Buttons -->
+                                        <div class="flex items-center gap-2">
+                                            <!-- ONLY show Preview button if the file type is supported -->
+                                            <button
+                                                v-if="
+                                                    canPreview(
+                                                        attachment.name,
+                                                        attachment.type,
+                                                    )
+                                                "
+                                                @click="openPreview(attachment)"
+                                                class="inline-flex items-center gap-1 rounded-md bg-purple-100 px-3 py-1.5 text-xs font-medium text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:hover:bg-purple-800"
+                                            >
+                                                <Eye class="h-3 w-3" />
+                                                Preview
+                                            </button>
+
+                                            <!-- Download Button (Always visible) -->
+                                            <a
+                                                :href="
+                                                    attachment.url ||
+                                                    `/storage/${attachment.path}`
+                                                "
+                                                :download="attachment.name"
+                                                target="_blank"
+                                                class="inline-flex items-center gap-1 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                                            >
+                                                <Download class="h-3 w-3" />
+                                                Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Submission Info (For Students) -->
                             <div v-if="!isFaculty">
                                 <div
@@ -352,29 +593,39 @@ const gradeSubmission = (submissionItem: any) => {
                                             class="flex items-center justify-between"
                                         >
                                             <div
-                                                class="flex items-center gap-2"
+                                                class=""
                                             >
-                                                <span
-                                                    class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
-                                                    :class="
-                                                        submissionStatusClasses
-                                                    "
+                                                <div
+                                                    class="flex items-center gap-2"
                                                 >
-                                                    {{ submission.status }}
-                                                </span>
-                                                <span
-                                                    v-if="
-                                                        submission.submitted_at
-                                                    "
-                                                    class="text-sm text-gray-600 dark:text-gray-400"
-                                                >
-                                                    Submitted:
-                                                    {{
-                                                        formatDate(
-                                                            submission.submitted_at,
-                                                        )
+                                                    <span
+                                                        class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
+                                                        :class="
+                                                            submissionStatusClasses
+                                                        "
+                                                    >
+                                                        {{ submission.status }}
+                                                    </span>
+                                                    <span
+                                                        v-if="
+                                                            submission.submitted_at
+                                                        "
+                                                        class="text-sm text-gray-600 dark:text-gray-400"
+                                                    >
+                                                        Submitted:
+                                                        {{
+                                                            formatDate(
+                                                                submission.submitted_at,
+                                                            )
+                                                        }}
+                                                    </span>
+                                                </div>
+                                                <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                                    Feedback: {{
+                                                        submission.feedback ||
+                                                        'No feedback provided'
                                                     }}
-                                                </span>
+                                                </p>
                                             </div>
                                             <div
                                                 v-if="
@@ -708,6 +959,127 @@ const gradeSubmission = (submissionItem: any) => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div
+            v-if="showPreviewModal && previewAttachment"
+            class="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-black p-4"
+            @click.self="closePreview"
+        >
+            <div
+                class="relative max-h-[90vh] w-full max-w-4xl overflow-auto rounded-lg bg-white dark:bg-gray-800"
+            >
+                <!-- Modal Header -->
+                <div
+                    class="sticky top-0 flex items-center justify-between border-b border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+                >
+                    <div class="min-w-0 flex-1">
+                        <h3
+                            class="truncate pr-4 text-lg font-semibold text-gray-900 dark:text-white"
+                        >
+                            {{ previewAttachment.name }}
+                        </h3>
+                        <p
+                            class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+                        >
+                            {{ formatFileSize(previewAttachment.size) }} •
+                            {{ previewAttachment.type || 'Unknown type' }}
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- Download button in modal -->
+                        <a
+                            :href="
+                                previewAttachment.url ||
+                                `/storage/${previewAttachment.path}`
+                            "
+                            :download="previewAttachment.name"
+                            target="_blank"
+                            class="inline-flex items-center gap-1 rounded-md bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600"
+                            title="Download"
+                        >
+                            <Download class="h-3 w-3" />
+                            Download
+                        </a>
+                        <button
+                            @click="closePreview"
+                            class="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                            <X
+                                class="h-5 w-5 text-gray-500 dark:text-gray-400"
+                            />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Content -->
+                <!-- Modal Content -->
+                <div class="flex min-h-[300px] items-center justify-center p-4">
+                    <div v-if="previewLoading" class="py-8 text-center">
+                        <div
+                            class="inline-block h-8 w-8 animate-spin rounded-full border-b-2 border-amber-500"
+                        ></div>
+                        <p class="mt-2 text-gray-600 dark:text-gray-400">
+                            Loading preview...
+                        </p>
+                    </div>
+
+                    <div v-else class="w-full">
+                        <!-- Image Preview -->
+                        <template
+                            v-if="
+                                isImageFile(
+                                    previewAttachment.name,
+                                    previewAttachment.type,
+                                )
+                            "
+                        >
+                            <img
+                                :src="
+                                    previewAttachment.url ||
+                                    `/storage/${previewAttachment.path}`
+                                "
+                                class="mx-auto max-h-[70vh] w-auto max-w-full object-contain shadow-lg"
+                            />
+                        </template>
+
+                        <!-- PDF Preview -->
+                        <template
+                            v-else-if="
+                                isPdfFile(
+                                    previewAttachment.name,
+                                    previewAttachment.type,
+                                )
+                            "
+                        >
+                            <iframe
+                                :src="`${previewAttachment.url || `/storage/${previewAttachment.path}`}#toolbar=0`"
+                                class="h-[70vh] w-full rounded border dark:border-gray-700"
+                            ></iframe>
+                        </template>
+
+                        <!-- Text File Preview -->
+                        <template
+                            v-else-if="
+                                isTextFile(
+                                    previewAttachment.name,
+                                    previewAttachment.type,
+                                )
+                            "
+                        >
+                            <div
+                                class="max-h-[70vh] overflow-auto rounded-lg bg-gray-50 p-4 dark:bg-gray-900"
+                            >
+                                <pre
+                                    class="font-mono text-sm whitespace-pre-wrap text-gray-800 dark:text-gray-200"
+                                    >{{ textFileContent }}</pre
+                                >
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>

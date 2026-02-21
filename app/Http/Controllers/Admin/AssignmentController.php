@@ -83,7 +83,7 @@ class AssignmentController extends Controller
             'instructions' => 'nullable|string',
             'total_marks' => 'required|numeric|min:0|max:1000',
             'deadline' => 'required|date|after:now',
-            'attachments.*' => 'nullable|file|max:10240', // 10MB max
+            'attachments.*' => 'nullable|file|max:5120', // 5MB max
         ]);
 
         // Handle file uploads
@@ -165,6 +165,7 @@ class AssignmentController extends Controller
                 'title' => $assignment->title,
                 'description' => $assignment->description,
                 'instructions' => $assignment->instructions,
+                'attachments' => $assignment->attachments,
                 'total_marks' => $assignment->total_marks,
                 'deadline' => $assignment->deadline,
                 'status' => $assignment->status,

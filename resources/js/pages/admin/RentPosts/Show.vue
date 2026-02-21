@@ -58,7 +58,7 @@
                                 <span
                                     class="text-amber-600 dark:text-amber-400"
                                 >
-                                    Your Property
+                                    {{ post.user?.name }}
                                 </span>
                             </div>
                         </div>

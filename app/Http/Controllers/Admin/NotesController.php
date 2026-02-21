@@ -35,7 +35,7 @@ class NotesController extends Controller
             $query->where('file_type', $request->file_type);
         }
 
-        // Add eager loading for user relationship
+        // Add eager loading for user relationship and include user_id in the response
         $notes = $query->with('user:id,name,email')
             ->orderBy('created_at', 'desc')
             ->paginate(12)
@@ -50,6 +50,7 @@ class NotesController extends Controller
                 'created_at' => $note->created_at->toDateTimeString(),
                 'formatted_size' => $this->formatFileSize($note->file_size),
                 'file_icon' => $this->getFileIcon($note->file_type),
+                'user_id' => $note->user_id, // Add the user_id of the note owner
                 'user' => $note->user ? [
                     'name' => $note->user->name,
                     'email' => $note->user->email,
@@ -85,6 +86,7 @@ class NotesController extends Controller
             'filters' => $request->only(['course_name', 'course_code', 'title', 'file_type']),
             'filterOptions' => $filterOptions,
             'stats' => $stats,
+            'currentUserId' => auth()->id(), // Pass the current authenticated user ID
         ]);
     }
 

@@ -101,7 +101,9 @@ const breadcrumbItems: BreadcrumbItem[] = [
                             <Label for="semester">Semester</Label>
                             <Select
                                 name="semester"
-                                :default-value="user.user_detail?.semester"
+                                :default-value="
+                                    String(user.user_detail?.semester)
+                                "
                             >
                                 <SelectTrigger>
                                     <SelectValue
@@ -112,7 +114,7 @@ const breadcrumbItems: BreadcrumbItem[] = [
                                     <SelectItem
                                         v-for="(id, name) in semesterOptions"
                                         :key="id"
-                                        :value="name"
+                                        :value="String(id)"
                                     >
                                         {{ name }}
                                     </SelectItem>

@@ -110,6 +110,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { User, Users } from 'lucide-vue-next';
+import { route } from 'ziggy-js';
 
 const props = defineProps<{
     students?: Array<{
@@ -132,9 +133,9 @@ const removeStudent = (studentId?: number) => {
     ) {
         // You'll need to create this route in Laravel
         router.delete(
-            route('admin.classes.removeStudent', {
-                class: props.classId,
-                student: studentId,
+            route('admin.classes.remove-student', {
+                classId: props.classId,
+                studentId: studentId,
             }),
             {
                 preserveScroll: true,

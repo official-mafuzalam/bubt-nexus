@@ -113,145 +113,160 @@
 
             <!-- Programs Table -->
             <div
-                v-if="programs?.length"
-                class="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+                class="relative overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
             >
-                <table
-                    class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
-                >
-                    <thead class="bg-gray-50 dark:bg-gray-800">
-                        <tr>
-                            <th
-                                scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                            >
-                                Code
-                            </th>
-                            <th
-                                scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                            >
-                                Name
-                            </th>
-                            <th
-                                scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                            >
-                                Description
-                            </th>
-                            <th
-                                scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                            >
-                                Status
-                            </th>
-                            <th
-                                scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                            >
-                                Students
-                            </th>
-                            <th
-                                scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium tracking-wider text-gray-500 uppercase dark:text-gray-400"
-                            >
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody
-                        class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900"
-                    >
-                        <tr v-for="program in programs" :key="program.id">
-                            <td
-                                class="px-6 py-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100"
-                            >
-                                {{ program.code }}
-                            </td>
-                            <td
-                                class="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-400"
-                            >
-                                {{ program.name }}
-                            </td>
-                            <td
-                                class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400"
-                            >
-                                {{ program.description || '-' }}
-                            </td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">
-                                <span
-                                    class="inline-flex rounded-full px-2 text-xs leading-5 font-semibold"
-                                    :class="
-                                        program.is_active
-                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                    "
-                                >
-                                    {{
-                                        program.is_active
-                                            ? 'Active'
-                                            : 'Inactive'
-                                    }}
-                                </span>
-                            </td>
-                            <td
-                                class="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-400"
-                            >
-                                {{ program.students_count || 0 }}
-                            </td>
-                            <td class="flex justify-end space-x-2">
-                                <Link
-                                    :href="
-                                        route('admin.programs.show', program.id)
-                                    "
-                                    class="rounded p-1.5 text-green-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20"
-                                    title="View Details"
-                                >
-                                    <Eye class="h-4 w-4" />
-                                </Link>
-                                <Link
-                                    :href="
-                                        route('admin.programs.edit', program.id)
-                                    "
-                                    class="rounded p-1.5 text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
-                                    title="Edit Program"
-                                >
-                                    <Edit class="h-4 w-4" />
-                                </Link>
-                                <button
-                                    @click="deleteProgram(program.id)"
-                                    class="rounded p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                                    title="Delete Program"
-                                >
-                                    <Trash class="h-4 w-4" />
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                <Table>
+                    <TableCaption>List of all academic programs</TableCaption>
 
-            <!-- Empty State -->
-            <div
-                v-else
-                class="rounded-xl border border-sidebar-border/70 py-16 text-center dark:border-sidebar-border"
-            >
-                <div
-                    class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400"
-                >
-                    <BookOpen class="mb-4 h-16 w-16 opacity-50" />
-                    <p class="mb-2 text-lg font-medium">No programs found</p>
-                    <p class="mb-4 text-sm">
-                        Get started by creating your first program.
-                    </p>
-                    <Link
-                        :href="route('admin.programs.create')"
-                        class="inline-flex items-center gap-2 rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
-                    >
-                        <Plus class="h-4 w-4" />
-                        Add Program
-                    </Link>
-                </div>
+                    <TableHeader class="bg-gray-50 dark:bg-gray-800">
+                        <TableRow>
+                            <TableHead class="font-medium">Code</TableHead>
+                            <TableHead class="font-medium">Name</TableHead>
+                            <TableHead class="font-medium"
+                                >Description</TableHead
+                            >
+                            <TableHead class="font-medium">Status</TableHead>
+                            <TableHead class="font-medium">Students</TableHead>
+                            <TableHead class="text-right font-medium"
+                                >Actions</TableHead
+                            >
+                        </TableRow>
+                    </TableHeader>
+
+                    <TableBody>
+                        <template v-if="programs?.length">
+                            <TableRow
+                                v-for="program in programs"
+                                :key="program.id"
+                                class="border-b hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
+                            >
+                                <!-- Code -->
+                                <TableCell>
+                                    <div
+                                        class="font-medium text-gray-900 dark:text-gray-100"
+                                    >
+                                        {{ program.code }}
+                                    </div>
+                                </TableCell>
+
+                                <!-- Name -->
+                                <TableCell>
+                                    <div
+                                        class="text-gray-900 dark:text-gray-100"
+                                    >
+                                        {{ program.name }}
+                                    </div>
+                                </TableCell>
+
+                                <!-- Description -->
+                                <TableCell>
+                                    <div
+                                        class="text-gray-500 dark:text-gray-400"
+                                    >
+                                        {{ program.description || '-' }}
+                                    </div>
+                                </TableCell>
+
+                                <!-- Status -->
+                                <TableCell>
+                                    <span
+                                        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize"
+                                        :class="
+                                            program.is_active
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                        "
+                                    >
+                                        {{
+                                            program.is_active
+                                                ? 'Active'
+                                                : 'Inactive'
+                                        }}
+                                    </span>
+                                </TableCell>
+
+                                <!-- Students -->
+                                <TableCell>
+                                    <div
+                                        class="text-gray-500 dark:text-gray-400"
+                                    >
+                                        {{ program.students_count || 0 }}
+                                    </div>
+                                </TableCell>
+
+                                <!-- Actions -->
+                                <TableCell>
+                                    <div class="flex justify-end space-x-2">
+                                        <Link
+                                            :href="
+                                                route(
+                                                    'admin.programs.show',
+                                                    program.id,
+                                                )
+                                            "
+                                            class="rounded p-1.5 text-green-500 transition-colors hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20"
+                                            title="View Details"
+                                        >
+                                            <Eye class="h-4 w-4" />
+                                        </Link>
+                                        <Link
+                                            :href="
+                                                route(
+                                                    'admin.programs.edit',
+                                                    program.id,
+                                                )
+                                            "
+                                            class="rounded p-1.5 text-blue-500 transition-colors hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                                            title="Edit Program"
+                                        >
+                                            <Edit class="h-4 w-4" />
+                                        </Link>
+                                        <button
+                                            @click="deleteProgram(program.id)"
+                                            class="rounded p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                                            title="Delete Program"
+                                        >
+                                            <Trash class="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        </template>
+
+                        <template v-else>
+                            <TableRow>
+                                <TableCell
+                                    colspan="6"
+                                    class="py-12 text-center"
+                                >
+                                    <div
+                                        class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400"
+                                    >
+                                        <BookOpen
+                                            class="mb-4 h-12 w-12 opacity-50"
+                                        />
+                                        <p class="mb-2 text-lg font-medium">
+                                            No programs found
+                                        </p>
+                                        <p class="mb-4 text-sm">
+                                            Get started by creating your first
+                                            program.
+                                        </p>
+                                        <Link
+                                            :href="
+                                                route('admin.programs.create')
+                                            "
+                                            class="inline-flex items-center gap-2 rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+                                        >
+                                            <Plus class="h-4 w-4" />
+                                            Add Program
+                                        </Link>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        </template>
+                    </TableBody>
+                </Table>
             </div>
         </div>
     </AppLayout>
@@ -264,6 +279,7 @@ import { Link, router } from '@inertiajs/vue3';
 import {
     BookOpen,
     CheckCircle,
+    Edit,
     Eye,
     Plus,
     Trash,
@@ -271,6 +287,17 @@ import {
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { route } from 'ziggy-js';
+
+// Import shadcn-vue table components
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 // Props
 const props = defineProps<{

@@ -48,13 +48,23 @@ const props = defineProps<{
     semesters: string[];
     statuses: string[];
     userHasRole: boolean;
-    userIntake: string;
-    userSection: string;
+    userIntake: number | null;
+    userSection: number | null;
 }>();
 
+// Transform array to object with IDs
+const semesterOptions = computed(() => {
+    const options: Record<string, number> = {};
+    props.semesters.forEach((name, index) => {
+        // Generate IDs starting from 611 or based on your logic
+        options[name] = 611 + index;
+    });
+    return options;
+});
+
 if (props.userHasRole && props.userIntake && props.userSection) {
-    form.intake = props.userIntake;
-    form.section = props.userSection;
+    form.intake = String(props.userIntake);
+    form.section = String(props.userSection);
 }
 
 // Breadcrumbs
@@ -66,7 +76,10 @@ const breadcrumbs = computed(() => {
 
     // If user has role, use myRoutines route
     if (props.userHasRole) {
-        crumbs.push({ title: 'Class Routines', href: route('admin.myRoutines') });
+        crumbs.push({
+            title: 'Class Routines',
+            href: route('admin.myRoutines'),
+        });
     } else {
         // If user doesn't have role, use the regular routines index
         crumbs.push({ title: 'Class Routines', href: routinesIndex().url });
@@ -241,11 +254,11 @@ watch(
                             >
                                 <option value="">Select Semester</option>
                                 <option
-                                    v-for="semester in semesters"
-                                    :key="semester"
-                                    :value="semester"
+                                    v-for="(id, name) in semesterOptions"
+                                    :key="id"
+                                    :value="id"
                                 >
-                                    {{ semester }}
+                                    {{ name }}
                                 </option>
                             </select>
                             <span

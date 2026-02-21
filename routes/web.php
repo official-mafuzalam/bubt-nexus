@@ -42,13 +42,20 @@ Route::prefix('admin-dashboard')->group(function () {
             Route::get('/create', [ClassController::class, 'create'])->name('classes.create');
             Route::post('create', [ClassController::class, 'store'])->name('classes.store');
             Route::get('/{class}', [ClassController::class, 'show'])->name('classes.show');
+            Route::put('/{class}/status', [ClassController::class, 'updateStatus'])->name('classes.status');
             Route::post('/join', [ClassController::class, 'join'])->name('classes.join');
+            Route::post('/leave', [ClassController::class, 'leave'])->name('classes.leave');
+            Route::delete('/{class}', [ClassController::class, 'destroy'])->name('classes.destroy');
+            Route::delete('/{classId}/remove-student/{studentId}', [ClassController::class, 'removeStudent'])->name('classes.remove-student');
 
             // Assignments
             Route::get('/{class}/assignments', [AssignmentController::class, 'index'])->name('assignments.index');
             Route::get('/{class}/assignments/create', [AssignmentController::class, 'create'])->name('assignments.create');
             Route::post('/{class}/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
             Route::get('/{class}/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
+            Route::get('/{class}/assignments/{assignment}/edit', [AssignmentController::class, 'edit'])->name('assignments.edit');
+            Route::put('/{class}/assignments/{assignment}', [AssignmentController::class, 'update'])->name('assignments.update');
+            Route::delete('/{class}/assignments/{assignment}', [AssignmentController::class, 'destroy'])->name('assignments.destroy');
             Route::put('/{class}/assignments/{assignment}/status', [AssignmentController::class, 'updateStatus'])->name('assignments.status');
             Route::get('/{class}/assignments/{assignment}/submissions/{submission}', [AssignmentController::class, 'viewSubmission'])->name('assignments.submissions.view');
 
@@ -68,6 +75,7 @@ Route::prefix('admin-dashboard')->group(function () {
         Route::get('routines/export', [RoutineController::class, 'export'])->name('admin.routines.export');
         Route::get('routines/filter-options', [RoutineController::class, 'getFilterOptions'])->name('admin.routines.filter-options');
 
+        // Rent management
         Route::resource('rent', RentController::class)->names('admin.rent-posts');
         Route::patch('/rent-posts/{rentPost}/toggle-availability', [RentController::class, 'toggleAvailability'])->name('admin.rent-posts.toggle-availability');
         Route::get('/my-rent-posts', [RentController::class, 'myPosts'])->name('admin.rent-posts.my-posts');

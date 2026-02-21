@@ -137,11 +137,11 @@ const calculatePercentage = computed(() => {
     ).toFixed(1);
 });
 
-const getFileIcon = (fileName: string, mimeType: string = '') => {
+const getFileIcon = (fileName: string, mimeType: string | null | undefined) => {
     if (!fileName) return File;
 
     const extension = fileName.split('.').pop()?.toLowerCase();
-    const mime = mimeType.toLowerCase();
+    const mime = (mimeType || '').toLowerCase(); // Safe null check
 
     // Check by mime type first
     if (mime.includes('pdf')) return FileText;
@@ -178,15 +178,19 @@ const getFileIcon = (fileName: string, mimeType: string = '') => {
         case 'gif':
         case 'bmp':
         case 'svg':
+        case 'webp':
             return FileImage;
         case 'mp4':
         case 'avi':
         case 'mov':
         case 'wmv':
+        case 'webm':
             return FileVideo;
         case 'mp3':
         case 'wav':
         case 'ogg':
+        case 'm4a':
+        case 'flac':
             return FileAudio;
         case 'zip':
         case 'rar':
@@ -199,11 +203,14 @@ const getFileIcon = (fileName: string, mimeType: string = '') => {
     }
 };
 
-const getFileColor = (fileName: string, mimeType: string = '') => {
+const getFileColor = (
+    fileName: string,
+    mimeType: string | null | undefined,
+) => {
     if (!fileName) return 'text-gray-500';
 
     const extension = fileName.split('.').pop()?.toLowerCase();
-    const mime = mimeType.toLowerCase();
+    const mime = (mimeType || '').toLowerCase(); // Safe null check
 
     // Check by mime type first
     if (mime.includes('pdf')) return 'text-red-500 dark:text-red-400';
@@ -242,15 +249,19 @@ const getFileColor = (fileName: string, mimeType: string = '') => {
         case 'gif':
         case 'bmp':
         case 'svg':
+        case 'webp':
             return 'text-purple-500 dark:text-purple-400';
         case 'mp4':
         case 'avi':
         case 'mov':
         case 'wmv':
+        case 'webm':
             return 'text-pink-500 dark:text-pink-400';
         case 'mp3':
         case 'wav':
         case 'ogg':
+        case 'm4a':
+        case 'flac':
             return 'text-indigo-500 dark:text-indigo-400';
         case 'zip':
         case 'rar':
@@ -283,6 +294,7 @@ const getFileName = (attachment: any): string => {
 };
 
 const basename = (path: string): string => {
+    if (!path) return 'file';
     return path.split('/').pop() || 'file';
 };
 
@@ -296,6 +308,10 @@ const downloadFile = (attachment: any) => {
         link.click();
         document.body.removeChild(link);
     }
+};
+
+const getMimeType = (attachment: any): string => {
+    return attachment.mime_type || '';
 };
 
 const previewFile = (attachment: any) => {
@@ -557,14 +573,14 @@ const assignmentShowRoute = computed(() => {
                                             :is="
                                                 getFileIcon(
                                                     getFileName(attachment),
-                                                    attachment.mime_type,
+                                                    getMimeType(attachment),
                                                 )
                                             "
                                             class="h-5 w-5 flex-shrink-0"
                                             :class="
                                                 getFileColor(
                                                     getFileName(attachment),
-                                                    attachment.mime_type,
+                                                    getMimeType(attachment),
                                                 )
                                             "
                                         />
@@ -650,14 +666,14 @@ const assignmentShowRoute = computed(() => {
                                         :is="
                                             getFileIcon(
                                                 getFileName(attachment),
-                                                attachment.mime_type,
+                                                getMimeType(attachment),
                                             )
                                         "
                                         class="h-5 w-5 flex-shrink-0"
                                         :class="
                                             getFileColor(
                                                 getFileName(attachment),
-                                                attachment.mime_type,
+                                                getMimeType(attachment),
                                             )
                                         "
                                     />

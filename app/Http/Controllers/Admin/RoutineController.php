@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Class\Data;
 use App\Http\Controllers\Controller;
 use App\Models\ClassRoutine;
 use App\Models\Program;
@@ -132,131 +133,32 @@ class RoutineController extends Controller
         $userIntake = $user->userDetail()->value('intake');
         $userSection = $user->userDetail()->value('section');
 
-        // Build query based on user's program code
         $programsQuery = Program::where('is_active', true);
 
-        if (!empty($userProgramCode)) {
-            $programsQuery->where('code', $userProgramCode);
+        if ($userHasRole) {
+            if (!empty($userProgramCode)) {
+                $programsQuery->where('code', $userProgramCode);
+            } else {
+                $programs = collect();
+            }
         }
 
-        $programs = $programsQuery->orderBy('name')
-            ->get(['id', 'name', 'code']);
+        if (!isset($programs)) {
+            $programs = $programsQuery->orderBy('name')
+                ->get(['id', 'name', 'code']);
+        }
 
         $days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
         $statuses = ['active', 'cancelled', 'rescheduled'];
 
-        // Get time slots in the format the Vue component expects
-        $timeSlots = [
-            [
-                'id' => 1,
-                'slot_name' => '08:00 AM to 09:15 AM',
-                'start_time' => '08:00:00',
-                'end_time' => '09:15:00'
-            ],
-            [
-                'id' => 2,
-                'slot_name' => '09:15 AM to 10:30 AM',
-                'start_time' => '09:15:00',
-                'end_time' => '10:30:00'
-            ],
-            [
-                'id' => 3,
-                'slot_name' => '10:30 AM to 11:45 AM',
-                'start_time' => '10:30:00',
-                'end_time' => '11:45:00'
-            ],
-            [
-                'id' => 4,
-                'slot_name' => '11:45 AM to 01:00 PM',
-                'start_time' => '11:45:00',
-                'end_time' => '13:00:00'
-            ],
-            [
-                'id' => 5,
-                'slot_name' => '01:30 PM to 02:45 PM',
-                'start_time' => '13:30:00',
-                'end_time' => '14:45:00'
-            ],
-            [
-                'id' => 6,
-                'slot_name' => '02:45 PM to 04:00 PM',
-                'start_time' => '14:45:00',
-                'end_time' => '16:00:00'
-            ],
-            [
-                'id' => 7,
-                'slot_name' => '04:00 PM to 05:15 PM',
-                'start_time' => '16:00:00',
-                'end_time' => '17:15:00'
-            ],
-            [
-                'id' => 8,
-                'slot_name' => '05:15 PM to 06:30 PM',
-                'start_time' => '17:15:00',
-                'end_time' => '18:30:00'
-            ],
-            [
-                'id' => 9,
-                'slot_name' => '08:20 AM to 09:30 AM',
-                'start_time' => '08:20:00',
-                'end_time' => '09:30:00'
-            ],
-            [
-                'id' => 10,
-                'slot_name' => '09:30 AM to 10:40 AM',
-                'start_time' => '09:30:00',
-                'end_time' => '10:40:00'
-            ],
-            [
-                'id' => 11,
-                'slot_name' => '10:40 AM to 11:50 AM',
-                'start_time' => '10:40:00',
-                'end_time' => '11:50:00'
-            ],
-            [
-                'id' => 12,
-                'slot_name' => '11:50 AM to 01:00 PM',
-                'start_time' => '11:50:00',
-                'end_time' => '13:00:00'
-            ],
-            [
-                'id' => 13,
-                'slot_name' => '03:30 PM to 04:40 PM',
-                'start_time' => '15:30:00',
-                'end_time' => '16:40:00'
-            ],
-            [
-                'id' => 14,
-                'slot_name' => '04:40 PM to 05:50 PM',
-                'start_time' => '16:40:00',
-                'end_time' => '17:50:00'
-            ],
-            [
-                'id' => 15,
-                'slot_name' => '05:50 PM to 07:00 PM',
-                'start_time' => '17:50:00',
-                'end_time' => '19:00:00'
-            ],
-            [
-                'id' => 16,
-                'slot_name' => '07:00 PM to 08:10 PM',
-                'start_time' => '19:00:00',
-                'end_time' => '20:10:00'
-            ],
-            [
-                'id' => 17,
-                'slot_name' => '08:10 PM to 09:20 PM',
-                'start_time' => '20:10:00',
-                'end_time' => '21:20:00'
-            ],
-        ];
+        $timeSlots = Data::getTimeSlotOptions();
 
         return Inertia::render('admin/Routines/Create', [
             'programs' => $programs,
             'days' => $days,
             'statuses' => $statuses,
             'timeSlots' => $timeSlots,
-            'semesters' => array_keys(\App\Http\Class\Data::getSemesterOptions()),
+            'semesters' => array_keys(Data::getSemesterOptions()),
             'userHasRole' => $userHasRole,
             'userIntake' => $userIntake,
             'userSection' => $userSection,
@@ -275,7 +177,7 @@ class RoutineController extends Controller
             'program_id' => 'required|exists:programs,id',
             'intake' => 'required|integer|min:1',
             'section' => 'required|integer|min:1',
-            'semester' => 'required|string|max:50',
+            'semester' => 'required|integer',
             'day' => 'required|string|in:MON,TUE,WED,THU,FRI,SAT,SUN',
             'time_slot' => 'required|string|max:50',
             'course_code' => 'required|string|max:20',
@@ -318,7 +220,7 @@ class RoutineController extends Controller
         ]);
 
 
-        if (!$userHasRole) {
+        if ($userHasRole) {
             return redirect()->route('admin.myRoutines')
                 ->with('success', 'Class routine updated successfully.');
         }
@@ -370,111 +272,7 @@ class RoutineController extends Controller
         $days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
         $statuses = ['active', 'cancelled', 'rescheduled'];
 
-        // Get time slots in the format the Vue component expects
-        $timeSlots = [
-            [
-                'id' => 1,
-                'slot_name' => '08:00 AM to 09:15 AM',
-                'start_time' => '08:00:00',
-                'end_time' => '09:15:00'
-            ],
-            [
-                'id' => 2,
-                'slot_name' => '09:15 AM to 10:30 AM',
-                'start_time' => '09:15:00',
-                'end_time' => '10:30:00'
-            ],
-            [
-                'id' => 3,
-                'slot_name' => '10:30 AM to 11:45 AM',
-                'start_time' => '10:30:00',
-                'end_time' => '11:45:00'
-            ],
-            [
-                'id' => 4,
-                'slot_name' => '11:45 AM to 01:00 PM',
-                'start_time' => '11:45:00',
-                'end_time' => '13:00:00'
-            ],
-            [
-                'id' => 5,
-                'slot_name' => '01:30 PM to 02:45 PM',
-                'start_time' => '13:30:00',
-                'end_time' => '14:45:00'
-            ],
-            [
-                'id' => 6,
-                'slot_name' => '02:45 PM to 04:00 PM',
-                'start_time' => '14:45:00',
-                'end_time' => '16:00:00'
-            ],
-            [
-                'id' => 7,
-                'slot_name' => '04:00 PM to 05:15 PM',
-                'start_time' => '16:00:00',
-                'end_time' => '17:15:00'
-            ],
-            [
-                'id' => 8,
-                'slot_name' => '05:15 PM to 06:30 PM',
-                'start_time' => '17:15:00',
-                'end_time' => '18:30:00'
-            ],
-            [
-                'id' => 9,
-                'slot_name' => '08:20 AM to 09:30 AM',
-                'start_time' => '08:20:00',
-                'end_time' => '09:30:00'
-            ],
-            [
-                'id' => 10,
-                'slot_name' => '09:30 AM to 10:40 AM',
-                'start_time' => '09:30:00',
-                'end_time' => '10:40:00'
-            ],
-            [
-                'id' => 11,
-                'slot_name' => '10:40 AM to 11:50 AM',
-                'start_time' => '10:40:00',
-                'end_time' => '11:50:00'
-            ],
-            [
-                'id' => 12,
-                'slot_name' => '11:50 AM to 01:00 PM',
-                'start_time' => '11:50:00',
-                'end_time' => '13:00:00'
-            ],
-            [
-                'id' => 13,
-                'slot_name' => '03:30 PM to 04:40 PM',
-                'start_time' => '15:30:00',
-                'end_time' => '16:40:00'
-            ],
-            [
-                'id' => 14,
-                'slot_name' => '04:40 PM to 05:50 PM',
-                'start_time' => '16:40:00',
-                'end_time' => '17:50:00'
-            ],
-            [
-                'id' => 15,
-                'slot_name' => '05:50 PM to 07:00 PM',
-                'start_time' => '17:50:00',
-                'end_time' => '19:00:00'
-            ],
-            [
-                'id' => 16,
-                'slot_name' => '07:00 PM to 08:10 PM',
-                'start_time' => '19:00:00',
-                'end_time' => '20:10:00'
-            ],
-            [
-                'id' => 17,
-                'slot_name' => '08:10 PM to 09:20 PM',
-                'start_time' => '20:10:00',
-                'end_time' => '21:20:00'
-            ],
-        ];
+        $timeSlots = Data::getTimeSlotOptions();
 
         return Inertia::render('admin/Routines/Edit', [
             'routine' => $routine,
@@ -541,7 +339,7 @@ class RoutineController extends Controller
             'slot_order' => $validated['slot_order'] ?? $routine->slot_order,
         ]);
 
-        if (!$userHasRole) {
+        if ($userHasRole) {
             return redirect()->route('admin.myRoutines')
                 ->with('success', 'Class routine updated successfully.');
         }
@@ -736,6 +534,7 @@ class RoutineController extends Controller
             'routines' => $routines,
             'userHasPermission' => $userHasPermission,
             'userType' => $isStudent ? 'student' : 'teacher',
+            'semesters' => Data::getSemesterOptions(),
         ]);
     }
 

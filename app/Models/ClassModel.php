@@ -23,6 +23,10 @@ class ClassModel extends Model
         'is_active'
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function faculty(): BelongsTo
     {
         return $this->belongsTo(User::class, 'faculty_id');

@@ -103,7 +103,7 @@
             <label
                 class="block text-sm font-medium text-gray-700 dark:text-gray-300"
             >
-                Attachments (Optional)
+                Attachments (Optional) [Only PDF, Image, Doc, and Zip files are allowed]
             </label>
             <div class="mt-2">
                 <input
@@ -151,7 +151,7 @@
             </div>
 
             <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Maximum file size: 10MB per file
+                Maximum file size: 5MB. Allowed formats: PDF, Image, Doc, Zip.
             </p>
         </div>
 

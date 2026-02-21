@@ -37,6 +37,11 @@ const props = defineProps<{
             formatted_size: string;
             file_icon: string;
             created_at: string;
+            user_id: number; // Add this to the type
+            user?: {
+                name: string;
+                email: string;
+            } | null;
         }[];
         links: any[];
         meta: any;
@@ -58,6 +63,7 @@ const props = defineProps<{
         image_notes: number;
         courses_with_notes: number;
     };
+    currentUserId: number; // Add this prop
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -103,6 +109,11 @@ watch(
     },
     { deep: true, immediate: false },
 );
+
+// Check if current user owns the note
+const isNoteOwner = (noteUserId: number) => {
+    return props.currentUserId === noteUserId;
+};
 
 // File type badge classes
 function getFileTypeBadgeClasses(fileType: string) {
@@ -543,12 +554,21 @@ const exportNotes = () => {
                                 <Calendar class="h-4 w-4" />
                                 {{ formatDate(note.created_at) }}
                             </div>
+
+                            <!-- Show Uploader Info (Optional) -->
+                            <div
+                                v-if="note.user"
+                                class="text-xs text-gray-400 dark:text-gray-500"
+                            >
+                                Uploaded by: {{ note.user.name }}
+                            </div>
                         </div>
 
                         <!-- Actions -->
                         <div
                             class="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-700"
                         >
+                            <!-- View button (always visible) -->
                             <a
                                 :href="route('admin.notes.show', note.id)"
                                 class="inline-flex items-center gap-2 text-sm font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400"
@@ -556,7 +576,10 @@ const exportNotes = () => {
                                 <Eye class="h-4 w-4" />
                                 View
                             </a>
+
+                            <!-- Action buttons - show based on ownership -->
                             <div class="flex items-center gap-2">
+                                <!-- Copy Link button (always visible) -->
                                 <button
                                     @click="copyLink(note.file_url)"
                                     class="rounded p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700"
@@ -564,20 +587,26 @@ const exportNotes = () => {
                                 >
                                     <LinkIcon class="h-4 w-4" />
                                 </button>
-                                <Link
-                                    :href="route('admin.notes.edit', note.id)"
-                                    class="rounded p-1.5 text-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
-                                    title="Edit Note"
-                                >
-                                    <Edit class="h-4 w-4" />
-                                </Link>
-                                <button
-                                    @click="deleteNote(note.id)"
-                                    class="rounded p-1.5 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                                    title="Delete Note"
-                                >
-                                    <Trash class="h-4 w-4" />
-                                </button>
+
+                                <!-- Edit and Delete buttons (only visible to owner) -->
+                                <template v-if="isNoteOwner(note.user_id)">
+                                    <Link
+                                        :href="
+                                            route('admin.notes.edit', note.id)
+                                        "
+                                        class="rounded p-1.5 text-blue-500 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20"
+                                        title="Edit Note"
+                                    >
+                                        <Edit class="h-4 w-4" />
+                                    </Link>
+                                    <button
+                                        @click="deleteNote(note.id)"
+                                        class="rounded p-1.5 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                                        title="Delete Note"
+                                    >
+                                        <Trash class="h-4 w-4" />
+                                    </button>
+                                </template>
                             </div>
                         </div>
                     </div>

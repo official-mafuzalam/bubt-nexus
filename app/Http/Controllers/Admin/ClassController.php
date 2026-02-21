@@ -34,8 +34,11 @@ class ClassController extends Controller
                 ->latest()
                 ->paginate(10);
         } else {
-            // Return empty paginated result instead of collect()
-            $classes = ClassModel::where('id', 0)->paginate(10); // Empty pagination
+            // Return all classes for admins or other roles
+            $classes = ClassModel::withCount(['enrollments', 'assignments'])
+                ->where('is_active', true)
+                ->latest()
+                ->paginate(10);
         }
 
         return Inertia::render('admin/Classes/Index', [
@@ -100,7 +103,23 @@ class ClassController extends Controller
             'isEnrolled' => $isEnrolled,
             'isFaculty' => $class->faculty_id === $user->id,
             'enrollmentCount' => $class->enrollments()->where('status', 'active')->count(),
+            'isActive' => $class->is_active,
         ]);
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $class = ClassModel::findOrFail($id);
+
+        // Only faculty can update class status
+        if ($class->faculty_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $class->is_active = !$class->is_active;
+        $class->save();
+
+        return back()->with('success', 'Class status updated successfully!');
     }
 
     public function join(Request $request)
@@ -135,6 +154,38 @@ class ClassController extends Controller
         return back()->with('success', 'Successfully joined the class!');
     }
 
+    public function leave(Request $request)
+    {
+        $request->validate([
+            'class_id' => 'required|integer|exists:classes,id',
+        ]);
+
+        $class = ClassModel::findOrFail($request->class_id);
+
+        // Check if enrolled
+        $enrollment = ClassEnrollment::where('class_id', $class->id)
+            ->where('student_id', Auth::id())
+            ->where('status', 'active')
+            ->first();
+        if (!$enrollment) {
+            return back()->with('error', 'You are not enrolled in this class.');
+        }
+        $enrollment->update(['status' => 'dropped']);
+        return to_route('admin.classes.index')->with('success', 'Successfully left the class.');
+    }
+
+    public function destroy($id)
+    {
+        $class = ClassModel::findOrFail($id);
+
+        // Only faculty can delete the class
+        if ($class->faculty_id !== Auth::id()) {
+            abort(403);
+        }
+        $class->delete();
+        return to_route('admin.classes.index')->with('success', 'Class deleted successfully!');
+    }
+
     public function removeStudent($classId, $studentId)
     {
         $class = ClassModel::findOrFail($classId);
@@ -146,7 +197,7 @@ class ClassController extends Controller
 
         ClassEnrollment::where('class_id', $classId)
             ->where('student_id', $studentId)
-            ->update(['status' => 'dropped']);
+            ->delete();
 
         return back()->with('success', 'Student removed from class.');
     }

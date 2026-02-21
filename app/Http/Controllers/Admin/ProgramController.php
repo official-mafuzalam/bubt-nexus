@@ -2,19 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Program;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class ProgramController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $programs = Program::withCount('students')
+        // Fix: Execute the query with ->get()
+        $programs = Program::withCount('students') // This will add students_count
             ->active()
             ->get()
             ->map(function ($program) {
@@ -33,51 +31,53 @@ class ProgramController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return Inertia::render('admin/Programs/Create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|unique:programs,code',
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        Program::create($validated);
+
+        return redirect()->route('admin.programs.index')
+            ->with('success', 'Program created successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function edit(Program $program)
     {
-        //
+        return Inertia::render('admin/Programs/Edit', [
+            'program' => $program,
+        ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function update(Request $request, Program $program)
     {
-        //
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|unique:programs,code,' . $program->id,
+            'description' => 'nullable|string',
+            'is_active' => 'boolean',
+        ]);
+
+        $program->update($validated);
+
+        return redirect()->route('admin.programs.index')
+            ->with('success', 'Program updated successfully.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function destroy(Program $program)
     {
-        //
-    }
+        $program->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return redirect()->route('admin.programs.index')
+            ->with('success', 'Program deleted successfully.');
     }
 }

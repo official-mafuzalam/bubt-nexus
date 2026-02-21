@@ -21,6 +21,7 @@ import {
     Download,
     Edit,
     GraduationCap,
+    MapPin,
     PlusCircle,
     Printer,
     Share2,
@@ -58,7 +59,29 @@ const props = defineProps<{
         course_teacher_room: string;
     }[];
     userHasPermission: boolean;
+    semesters: Record<string, number>;
 }>();
+
+// Create a mapping from ID to semester name
+const semesterIdToName = computed(() => {
+    const mapping: Record<string, string> = {};
+    Object.entries(props.semesters).forEach(([name, id]) => {
+        mapping[id.toString()] = name;
+    });
+    return mapping;
+});
+
+// Helper function to get semester name from ID
+const getSemesterName = (semesterId: string): string => {
+    return semesterIdToName.value[semesterId] || semesterId;
+};
+
+// Define currentSemester as a computed property
+const currentSemester = computed(() => {
+    if (!props.routines || props.routines.length === 0) return 'N/A';
+    const semesterId = props.routines[0].semester;
+    return getSemesterName(semesterId);
+});
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: dashboard().url },
@@ -79,7 +102,6 @@ onMounted(() => {
 
 // Calculate stats
 const totalClasses = routines.length;
-const currentSemester = routines.length > 0 ? routines[0].semester : 'N/A';
 const uniqueDays = computed(() => [...new Set(routines.map((r) => r.day))]);
 const totalHours = computed(() => {
     const totalMinutes = routines.reduce((total, routine) => {
@@ -282,6 +304,7 @@ const shareRoutine = () => {
                         Share
                     </button>
                     <Link
+                        v-if="props.userHasPermission"
                         :href="route('admin.routines.create')"
                         class="inline-flex items-center gap-2 rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 focus:ring-2 focus:ring-amber-400 focus:outline-none"
                     >
@@ -603,6 +626,9 @@ const shareRoutine = () => {
                                                     {{ routine.status }}
                                                 </span>
                                                 <Link
+                                                    v-if="
+                                                        props.userHasPermission
+                                                    "
                                                     :href="
                                                         route(
                                                             'admin.routines.edit',
