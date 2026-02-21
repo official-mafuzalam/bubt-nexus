@@ -22,6 +22,10 @@ use Illuminate\Support\Facades\Route;
 
 // Public Routes
 Route::get('/', [PublicHomeController::class, 'index'])->name('home');
+Route::get('/cover-page-generator', [PublicHomeController::class, 'coverPageGenerator'])->name('cover-page-generator');
+Route::post('/preview-cover-page', [PublicHomeController::class, 'previewCoverPage'])->name('cover-page-generator.preview');
+Route::get('/cgpa-calculator', [PublicHomeController::class, 'cgpaCalculator'])->name('cgpa-calculator');
+Route::get('/notes', [PublicHomeController::class, 'notes'])->name('public.notes');
 
 Route::prefix('admin-dashboard')->group(function () {
 

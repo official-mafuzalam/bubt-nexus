@@ -232,17 +232,6 @@ const filteredSections = computed(() => {
     return props.filterOptions?.sections ?? [];
 });
 
-// ✅ Export routines
-const exportRoutines = () => {
-    const params = new URLSearchParams();
-    Object.entries(localFilters.value).forEach(([key, value]) => {
-        if (value) {
-            params.append(key, value.toString());
-        }
-    });
-
-    window.location.href = `${exportRoute().url}?${params.toString()}`;
-};
 </script>
 
 <template>
@@ -268,13 +257,6 @@ const exportRoutines = () => {
                 </div>
 
                 <div class="flex flex-wrap gap-2">
-                    <button
-                        @click="exportRoutines"
-                        class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                    >
-                        <Download class="h-4 w-4" />
-                        Export CSV
-                    </button>
                     <button
                         @click="showFilters = !showFilters"
                         class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"

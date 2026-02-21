@@ -12,6 +12,7 @@ import { useSettings } from '@/composables/useSettings';
 import { home } from '@/routes';
 import { Link, usePage } from '@inertiajs/vue3';
 import AppLogoIcon from '../AppLogoIcon.vue';
+import { route } from 'ziggy-js';
 
 const { setting } = useSettings();
 
@@ -117,27 +118,27 @@ const register = () => '/register';
                         </NavigationMenuContent>
                     </NavigationMenuItem> -->
 
-                    <!-- <NavigationMenuItem className="hidden md:block">
+                    <NavigationMenuItem className="hidden md:block">
                         <NavigationMenuTrigger
                             class="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                            >Simple</NavigationMenuTrigger
+                            >Tools</NavigationMenuTrigger
                         >
                         <NavigationMenuContent>
                             <ul className="grid w-[200px] gap-4">
                                 <li>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">Components</Link>
+                                        <Link :href="route('cover-page-generator')">Cover Page Generator</Link>
                                     </NavigationMenuLink>
                                     <NavigationMenuLink asChild>
-                                        <Link href="#">Documentation</Link>
+                                        <Link :href="route('cgpa-calculator')">CGPA Calculator</Link>
                                     </NavigationMenuLink>
-                                    <NavigationMenuLink asChild>
-                                        <Link href="#">Blocks</Link>
-                                    </NavigationMenuLink>
+                                    <!-- <NavigationMenuLink asChild>
+                                        <Link :href="route('public.notes')">Notes</Link>
+                                    </NavigationMenuLink> -->
                                 </li>
                             </ul>
                         </NavigationMenuContent>
-                    </NavigationMenuItem> -->
+                    </NavigationMenuItem>
 
                     <!-- <NavigationMenuItem
                         class="bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
